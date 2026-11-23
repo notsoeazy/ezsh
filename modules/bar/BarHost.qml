@@ -7,28 +7,33 @@ import qs.components
 
 import qs.modules.osd
 import qs.modules.launcher
+import qs.modules.wallpaper
 
 // Routes the bar body between its views: the bar itself, the OSD, and the views in `views`
 // (opened through ViewService). The OSD (from OsdService) shows over an open view, which stays
-// loaded underneath. Switching fades the old view out, resizes the body, then fades the new
-// one in. To add a view: add a Component to `views`, give its root
-// implicitWidth/implicitHeight, and emit closeRequested() to go back to the bar.
+// loaded underneath. A requested view loads in the background while the current one stays on
+// screen; once it is ready the current one fades out, the body resizes, and the new one fades in.
+// To add a view: add a ViewSlot with the view as its sourceComponent, list it in `views`, give
+// the view's root implicitWidth/implicitHeight, and emit closeRequested() to go back to the bar.
 Item {
     id: root
 
     required property string monitorName
 
     readonly property var views: ({
-            launcher: launcherView
+            launcher: launcherSlot,
+            wallpaper: wallpaperSlot
         })
     readonly property real barContentWidth: barView.contentWidth
     readonly property real osdWidth: osdView.implicitWidth
     readonly property real osdHeight: osdView.implicitHeight
 
-    readonly property real viewWidth: viewLoader.item?.implicitWidth ?? 0
-    readonly property real viewHeight: viewLoader.item?.implicitHeight ?? 0
+    // The displayed view's size; its slot stays loaded until it has faded out, so Bar resizes from it.
+    readonly property ViewSlot displayedSlot: root.views[root.displayedView] ?? null
+    readonly property real viewWidth: root.displayedSlot?.item?.implicitWidth ?? 0
+    readonly property real viewHeight: root.displayedSlot?.item?.implicitHeight ?? 0
 
-    readonly property bool coversOsd: viewLoader.item?.coversOsd === true
+    readonly property bool coversOsd: root.views[root.requestedView]?.item?.coversOsd === true
     readonly property bool osdAllowed: !coversOsd && (requestedView === "bar" || Config.osd.showOverViews)
     readonly property bool isFocusedMonitor: root.monitorName === HyprlandService.focusedMonitorName
 
@@ -38,45 +43,50 @@ Item {
     readonly property string targetView: osdRequested && osdAllowed ? "osd" : requestedView
     readonly property string requestedView: ViewService.view !== "" && ViewService.monitorName === root.monitorName ? ViewService.view : "bar"
 
+    // Opacity of whatever is displayed now; the switch commits when it reaches 0.
+    readonly property real displayedOpacity: root.displayedView === "bar" ? barView.opacity : root.displayedView === "osd" ? osdView.opacity : (root.displayedSlot?.opacity ?? 0)
+
     property string displayedView: "bar"
-    // The view the loader holds; kept while it fades out after closing.
-    property string loadedView: ""
+    // The displayed layer is fading out so the target can take over.
+    property bool leaving: false
     property bool barExpanded: false
     property real expansionProgress: 0
     property bool fullscreen: false
     property bool retracted: false
-    property bool fadingBetweenViews: false
 
     signal viewChangeStarting(bool animate)
 
     function targetReady() {
-        return targetView === "bar" || targetView === "osd" || (viewLoader.status === Loader.Ready && root.loadedView === targetView)
+        return root.targetView === "bar" || root.targetView === "osd" || root.views[root.targetView]?.status === Loader.Ready;
     }
 
-    function scheduleViewSwitch() {
-        if (targetView === displayedView) {
-            viewFade.stop()
-            fadingBetweenViews = false
-            if (displayedView === "bar")
-                loadedView = ""
-        } else if (retracted) {
-            viewFade.stop()
-            fadingBetweenViews = false
-            Qt.callLater(showTargetView)
-        } else if (!viewFade.running) {
-            viewFade.restart()
+    // Called (through scheduleSwitch) whenever the target, readiness, retraction or the displayed
+    // layer's opacity changes: keeps the current layer on screen until the target is loaded, then
+    // fades it out and commits once it has reached 0.
+    function scheduleSwitch() {
+        // Deferred: committing changes displayedView, which the triggering bindings depend on.
+        Qt.callLater(root.switchViews);
+    }
+
+    function switchViews() {
+        if (root.targetView === root.displayedView || !root.targetReady()) {
+            root.leaving = false;
+            return;
         }
+        if (root.retracted) {
+            // Nothing is on screen to fade out.
+            root.commit(false);
+            return;
+        }
+        root.leaving = true;
+        if (root.displayedOpacity === 0)
+            root.commit(true);
     }
 
-    function showTargetView() {
-        if (targetView === displayedView || !targetReady())
-            return
-
-        fadingBetweenViews = false
-        viewChangeStarting(!retracted)
-        displayedView = targetView
-        if (displayedView === "bar")
-            loadedView = ""
+    function commit(animate) {
+        root.leaving = false;
+        root.viewChangeStarting(animate);
+        root.displayedView = root.targetView;
     }
 
     function navigateTo(view) {
@@ -87,30 +97,16 @@ Item {
     }
 
     onRequestedViewChanged: {
-        if (requestedView === "bar")
-            return
-        if (!(requestedView in views)) {
+        if (requestedView !== "bar" && !(requestedView in views)) {
             console.warn("BarHost: unknown view", requestedView)
             Qt.callLater(ViewService.close)
-            return
         }
-        loadedView = requestedView
     }
-    onTargetViewChanged: scheduleViewSwitch()
-    onRetractedChanged: scheduleViewSwitch()
-
-    SequentialAnimation {
-        id: viewFade
-
-        ScriptAction {
-            script: root.fadingBetweenViews = true
-        }
-        PauseAnimation {
-            duration: Tokens.animDuration.effectsFast
-        }
-        ScriptAction {
-            script: root.showTargetView()
-        }
+    onTargetViewChanged: root.scheduleSwitch()
+    onRetractedChanged: root.scheduleSwitch()
+    onDisplayedOpacityChanged: {
+        if (root.leaving && root.displayedOpacity === 0)
+            root.scheduleSwitch();
     }
 
     BarView {
@@ -121,35 +117,10 @@ Item {
         expanded: root.barExpanded
         progress: root.expansionProgress
 
-        opacity: root.displayedView === "bar" && !root.fadingBetweenViews ? 1 : 0
+        opacity: root.displayedView === "bar" && !root.leaving ? 1 : 0
         visible: opacity > 0
 
         onNavigateRequested: view => root.navigateTo(view)
-
-        Behavior on opacity {
-            Anim {
-                duration: Tokens.animDuration.effectsFast
-            }
-        }
-    }
-
-    Loader {
-        id: viewLoader
-
-        anchors.fill: parent
-
-        active: root.loadedView !== ""
-        asynchronous: true
-
-        sourceComponent: root.views[root.loadedView] ?? null
-
-        opacity: root.displayedView === root.requestedView && root.displayedView === root.loadedView && !root.fadingBetweenViews && status === Loader.Ready ? 1 : 0
-        visible: opacity > 0
-
-        onLoaded: {
-            if (!viewFade.running)
-                root.showTargetView()
-        }
 
         Behavior on opacity {
             Anim {
@@ -164,7 +135,7 @@ Item {
         x: (parent.width - width) / 2
         y: (parent.height - height) / 2
 
-        opacity: root.displayedView === "osd" && !root.fadingBetweenViews ? 1 : 0
+        opacity: root.displayedView === "osd" && !root.leaving ? 1 : 0
         visible: opacity > 0
 
         Behavior on opacity {
@@ -174,10 +145,27 @@ Item {
         }
     }
 
-    Component {
-        id: launcherView
+    ViewSlot {
+        id: launcherSlot
 
-        LauncherView {
+        anchors.fill: parent
+        host: root
+        name: "launcher"
+
+        sourceComponent: LauncherView {
+            onCloseRequested: ViewService.close()
+            onNavigateRequested: view => root.navigateTo(view)
+        }
+    }
+
+    ViewSlot {
+        id: wallpaperSlot
+
+        anchors.fill: parent
+        host: root
+        name: "wallpaper"
+
+        sourceComponent: WallpaperView {
             onCloseRequested: ViewService.close()
         }
     }

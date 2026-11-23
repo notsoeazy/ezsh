@@ -10,6 +10,14 @@ Singleton {
     readonly property Osd osd: Osd {}
     readonly property Services services: Services {}
     readonly property Launcher launcher: Launcher {}
+    readonly property Wallpaper wallpaper: Wallpaper {}
+
+    component Wallpaper: QtObject {
+        readonly property bool enabled: true
+        readonly property string directory: "~/Pictures/Wallpapers"
+        // Ms to wait after a change before decoding the new wallpaper, so fast browsing skips images.
+        readonly property int previewDelay: 120
+    }
 
     component Launcher: QtObject {
         readonly property string commandPrefix: ">"
@@ -18,6 +26,7 @@ Singleton {
     }
 
     component Bar: QtObject {
+        readonly property bool symmetricSides: true
         readonly property int expandedWidth: 520
         readonly property bool floating: false
         readonly property int floatingGap: 8

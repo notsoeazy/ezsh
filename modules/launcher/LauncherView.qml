@@ -30,6 +30,7 @@ Item {
     property point pointerScene: Qt.point(-1, -1)
 
     signal closeRequested()
+    signal navigateRequested(string view)
 
     implicitWidth: root.panelWidth
     implicitHeight: root.contentPadding * 2 + search.height + listArea.height + hints.height + Tokens.spacing.sm * 2
@@ -80,7 +81,6 @@ Item {
     Component.onCompleted: {
         root.openPage(ViewService.page || "apps");
         root.showResults();
-        search.forceActiveFocus();
     }
 
     onResultsChanged: root.showResults()
@@ -114,6 +114,8 @@ Item {
     SearchBar {
         id: search
 
+        // Takes the keyboard when BarHost shows this view (its ViewSlot gets focus).
+        focus: true
         anchors {
             top: parent.top
             left: parent.left

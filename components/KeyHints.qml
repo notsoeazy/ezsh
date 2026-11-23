@@ -8,6 +8,7 @@ Item {
     id: root
 
     property var hints: []
+    property string escapeLabel: "close"
 
     readonly property int hintHeight: 20
 
@@ -17,7 +18,7 @@ Item {
         anchors.left: parent.left
         anchors.verticalCenter: parent.verticalCenter
         key: "esc"
-        label: "close"
+        label: root.escapeLabel
     }
 
     Row {

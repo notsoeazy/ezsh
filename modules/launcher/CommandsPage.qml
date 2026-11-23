@@ -17,6 +17,12 @@ LauncherPage {
             subtitle: "Emoji, symbols and Nerd Font glyphs",
             symbol: "emoji_symbols",
             page: "symbols"
+        },
+        {
+            title: "wallpaper",
+            subtitle: "Choose the desktop wallpaper",
+            symbol: "wallpaper",
+            view: "wallpaper"
         }
     ]
     readonly property var index: Fuzzysort.default.snapshot(root.commands, {
@@ -45,6 +51,9 @@ LauncherPage {
     }
 
     function activate(entry, launcher) {
-        launcher.openPage(entry.page);
+        if (entry.view)
+            launcher.navigateRequested(entry.view);
+        else
+            launcher.openPage(entry.page);
     }
 }

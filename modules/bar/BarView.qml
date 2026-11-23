@@ -7,8 +7,6 @@ import qs.services
 import qs.components
 import qs.modules.bar.widgets
 
-// Three columns (left, center, right), each a BarGroup with a hidden second row.
-// Sides always get equal width so the clock stays horizontally centered.
 Item {
     id: root
 
@@ -16,8 +14,12 @@ Item {
     required property real progress
 
     readonly property real iconButtonOverhang: (Tokens.bar.iconButtonSize - Tokens.icon.md) / 2
-    readonly property real contentWidth: Tokens.bar.horizontalPadding * 2 - root.iconButtonOverhang + 2 * (Math.max(left.primaryWidth, right.primaryWidth) + Tokens.bar.centerGap) + center.width
-    readonly property real sideWidth: Math.max(0, (root.width - center.width - Tokens.bar.horizontalPadding * 2 + root.iconButtonOverhang) / 2 - Tokens.bar.centerGap)
+    readonly property real leftBase: Config.bar.symmetricSides ? Math.max(left.primaryWidth, right.primaryWidth) : left.primaryWidth
+    readonly property real rightBase: Config.bar.symmetricSides ? Math.max(left.primaryWidth, right.primaryWidth) : right.primaryWidth
+    readonly property real contentWidth: Tokens.bar.horizontalPadding * 2 - root.iconButtonOverhang + root.leftBase + root.rightBase + 2 * Tokens.bar.centerGap + center.width
+    readonly property real sidesWidth: root.width - center.width - Tokens.bar.horizontalPadding * 2 + root.iconButtonOverhang - 2 * Tokens.bar.centerGap
+    readonly property real leftWidth: Math.max(0, root.leftBase + (root.sidesWidth - root.leftBase - root.rightBase) / 2)
+    readonly property real rightWidth: Math.max(0, root.rightBase + (root.sidesWidth - root.leftBase - root.rightBase) / 2)
 
     signal navigateRequested(string view)
 
@@ -25,7 +27,7 @@ Item {
         id: left
 
         x: Tokens.bar.horizontalPadding
-        width: root.sideWidth
+        width: root.leftWidth
         height: root.height
         expansionProgress: root.progress
         expanded: root.expanded
@@ -59,7 +61,8 @@ Item {
     BarGroup {
         id: center
 
-        x: (root.width - width) / 2
+        // Centered, shifted by half the difference when the sides differ (never when symmetric).
+        x: (root.width - width + root.leftWidth - root.rightWidth) / 2
         width: implicitWidth
         height: root.height
         expansionProgress: root.progress
@@ -88,7 +91,7 @@ Item {
         id: right
 
         x: root.width - Tokens.bar.horizontalPadding + root.iconButtonOverhang - width
-        width: root.sideWidth
+        width: root.rightWidth
         height: root.height
         expansionProgress: root.progress
         expanded: root.expanded

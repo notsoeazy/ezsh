@@ -28,3 +28,4 @@ November 22, 2026
 
 November 23, 2026
 - [/] App Launcher (apps, >commands, clipboard, symbols)
+- [/] Wallpaper Selector
