@@ -1,36 +1,64 @@
-
 import QtQuick
 
 import qs
 import qs.config
+import qs.services
 import qs.components
 
-import "views"
+import qs.modules.osd
+import qs.modules.launcher
 
+// Routes the bar body between its views: the bar itself, the OSD, and the views in `views`
+// (opened through ViewService). The OSD (from OsdService) shows over an open view, which stays
+// loaded underneath. Switching fades the old view out, resizes the body, then fades the new
+// one in. To add a view: add a Component to `views`, give its root
+// implicitWidth/implicitHeight, and emit closeRequested() to go back to the bar.
 Item {
     id: root
 
+    required property string monitorName
+
+    readonly property var views: ({
+            launcher: launcherView
+        })
     readonly property real barContentWidth: barView.contentWidth
     readonly property real osdWidth: osdView.implicitWidth
     readonly property real osdHeight: osdView.implicitHeight
+
+    readonly property real viewWidth: viewLoader.item?.implicitWidth ?? 0
+    readonly property real viewHeight: viewLoader.item?.implicitHeight ?? 0
+
     readonly property bool coversOsd: viewLoader.item?.coversOsd === true
     readonly property bool osdAllowed: !coversOsd && (requestedView === "bar" || Config.osd.showOverViews)
-    readonly property string targetView: osdRequested && osdAllowed ? "osd" : requestedView
+    readonly property bool isFocusedMonitor: root.monitorName === HyprlandService.focusedMonitorName
 
-    property string requestedView: "bar"
+    readonly property bool osdRequested: (OsdService.showing && root.isFocusedMonitor) || (root.fullscreen && root.displayedView === "osd" && !root.retracted)
+    readonly property bool showsOsd: OsdService.showing && root.isFocusedMonitor && root.osdAllowed
+
+    readonly property string targetView: osdRequested && osdAllowed ? "osd" : requestedView
+    readonly property string requestedView: ViewService.view !== "" && ViewService.monitorName === root.monitorName ? ViewService.view : "bar"
+
     property string displayedView: "bar"
+    // The view the loader holds; kept while it fades out after closing.
+    property string loadedView: ""
     property bool barExpanded: false
     property real expansionProgress: 0
-    property bool osdRequested: false
+    property bool fullscreen: false
     property bool retracted: false
     property bool fadingBetweenViews: false
 
     signal viewChangeStarting(bool animate)
 
+    function targetReady() {
+        return targetView === "bar" || targetView === "osd" || (viewLoader.status === Loader.Ready && root.loadedView === targetView)
+    }
+
     function scheduleViewSwitch() {
         if (targetView === displayedView) {
             viewFade.stop()
             fadingBetweenViews = false
+            if (displayedView === "bar")
+                loadedView = ""
         } else if (retracted) {
             viewFade.stop()
             fadingBetweenViews = false
@@ -41,13 +69,33 @@ Item {
     }
 
     function showTargetView() {
-        if (targetView === displayedView)
+        if (targetView === displayedView || !targetReady())
             return
 
+        fadingBetweenViews = false
         viewChangeStarting(!retracted)
         displayedView = targetView
+        if (displayedView === "bar")
+            loadedView = ""
     }
 
+    function navigateTo(view) {
+        if (view === "bar")
+            ViewService.close()
+        else
+            ViewService.open(view, "", root.monitorName)
+    }
+
+    onRequestedViewChanged: {
+        if (requestedView === "bar")
+            return
+        if (!(requestedView in views)) {
+            console.warn("BarHost: unknown view", requestedView)
+            Qt.callLater(ViewService.close)
+            return
+        }
+        loadedView = requestedView
+    }
     onTargetViewChanged: scheduleViewSwitch()
     onRetractedChanged: scheduleViewSwitch()
 
@@ -61,23 +109,8 @@ Item {
             duration: Tokens.animDuration.effectsFast
         }
         ScriptAction {
-            script: {
-                root.fadingBetweenViews = false
-                root.showTargetView()
-            }
+            script: root.showTargetView()
         }
-    }
-
-    function navigateTo(view) {
-        requestedView = view
-    }
-
-    function goHome() {
-        navigateTo("bar")
-    }
-
-    function goBack() {
-        goHome()
     }
 
     BarView {
@@ -105,13 +138,18 @@ Item {
 
         anchors.fill: parent
 
-        active: root.requestedView !== "bar"
+        active: root.loadedView !== ""
         asynchronous: true
 
-        sourceComponent: placeholderView
+        sourceComponent: root.views[root.loadedView] ?? null
 
-        opacity: root.displayedView === root.requestedView && !root.fadingBetweenViews && status === Loader.Ready ? 1 : 0
+        opacity: root.displayedView === root.requestedView && root.displayedView === root.loadedView && !root.fadingBetweenViews && status === Loader.Ready ? 1 : 0
         visible: opacity > 0
+
+        onLoaded: {
+            if (!viewFade.running)
+                root.showTargetView()
+        }
 
         Behavior on opacity {
             Anim {
@@ -136,74 +174,11 @@ Item {
         }
     }
 
-    // Temporary view used to test navigation.
-    // We'll replace this with real view components.
     Component {
-        id: placeholderView
+        id: launcherView
 
-        Item {
-            id: placeholder
-
-            Text {
-                anchors {
-                    top: parent.top
-                    left: parent.left
-                    margins: 24
-                }
-
-                text: {
-                    switch (root.requestedView) {
-                    case "launcher":
-                        return "Launcher"
-                    case "wallpaper":
-                        return "Wallpaper Selector"
-                    case "theme":
-                        return "Theme Selector"
-                    default:
-                        return "Unknown View"
-                    }
-                }
-
-                color: "#ffffff"
-                font.pixelSize: 20
-                font.weight: Font.DemiBold
-            }
-
-            Rectangle {
-                width: 90
-                height: 34
-
-                anchors {
-                    right: parent.right
-                    top: parent.top
-                    margins: 20
-                }
-
-                radius: 10
-                color: "#39414d"
-
-                Text {
-                    anchors.centerIn: parent
-                    text: "Back"
-                    color: "#ffffff"
-                    font.pixelSize: 13
-                }
-
-                MouseArea {
-                    anchors.fill: parent
-                    cursorShape: Qt.PointingHandCursor
-
-                    onClicked: root.goBack()
-                }
-            }
-
-            Text {
-                anchors.centerIn: parent
-
-                text: "View content coming soon"
-                color: "#9ca8b8"
-                font.pixelSize: 14
-            }
+        LauncherView {
+            onCloseRequested: ViewService.close()
         }
     }
 }

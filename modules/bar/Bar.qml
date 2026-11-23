@@ -1,5 +1,6 @@
 import Quickshell
 import Quickshell.Wayland
+import Quickshell.Hyprland
 import QtQuick
 import QtQuick.Shapes
 
@@ -20,15 +21,6 @@ Scope {
     readonly property int expandedWidth: Config.bar.expandedWidth
     readonly property int expandedHeight: Tokens.bar.expandedHeight
 
-    readonly property int launcherWidth: 620
-    readonly property int launcherHeight: 380
-
-    readonly property int wallpaperWidth: 680
-    readonly property int wallpaperHeight: 420
-
-    readonly property int themeWidth: 560
-    readonly property int themeHeight: 340
-
     readonly property int cornerRadius: Config.bar.cornerRadius
 
     readonly property int osdPadding: Tokens.spacing.xs
@@ -41,9 +33,9 @@ Scope {
 
             required property var modelData
             readonly property var monitor: HyprlandService.monitorFor(window.screen)
-            readonly property bool isFocusedMonitor: window.monitor?.name === HyprlandService.focusedMonitorName
             readonly property bool fullscreen: HyprlandService.isFullscreenOn(window.monitor)
             readonly property real borderThickness: Config.border.thickness * (1 - window.fullscreenProgress)
+            readonly property bool viewOpen: barHost.requestedView !== "bar"
 
             property real fullscreenProgress: window.fullscreen ? 1 : 0
 
@@ -57,10 +49,16 @@ Scope {
 
             color: "transparent"
             exclusionMode: ExclusionMode.Ignore
-            focusable: false
 
             WlrLayershell.layer: window.fullscreenProgress > 0 || HyprlandService.hasFullscreenUnderSpecial(window.monitor) ? WlrLayer.Overlay : WlrLayer.Top
             WlrLayershell.namespace: "quickshell-bar"
+            WlrLayershell.keyboardFocus: window.viewOpen ? WlrKeyboardFocus.OnDemand : WlrKeyboardFocus.None
+
+            HyprlandFocusGrab {
+                active: window.viewOpen
+                windows: [window]
+                onCleared: ViewService.close()
+            }
 
             mask: Region { item: barBody.hideProgress < 1 ? contentLayer : null }
 
@@ -79,10 +77,9 @@ Scope {
 
                 readonly property real restingTopMargin: window.borderThickness + (Config.bar.floating ? Config.bar.floatingGap : 0)
                 readonly property bool isFloating: Config.bar.floating
-                readonly property bool showsOsd: OsdService.showing && window.isFocusedMonitor && barHost.osdAllowed
                 readonly property bool expanded: hoverHandler.hovered && barHost.displayedView === "bar" && !window.fullscreen
 
-                property real hideProgress: window.fullscreen && !showsOsd ? 1 : 0
+                property real hideProgress: window.fullscreen && !barHost.showsOsd && !window.viewOpen ? 1 : 0
                 property real progress: expanded ? 1 : 0
                 property real previousWidth: 0
                 property real previousHeight: 0
@@ -121,15 +118,11 @@ Scope {
                     switch (barHost.displayedView) {
                     case "osd":
                         return barHost.osdWidth + root.osdPadding * 2
-                    case "launcher":
-                        return root.launcherWidth
-                    case "wallpaper":
-                        return root.wallpaperWidth
-                    case "theme":
-                        return root.themeWidth
-                    default:
+                    case "bar":
                         return barHost.barContentWidth
                             + (Math.max(root.expandedWidth, barHost.barContentWidth) - barHost.barContentWidth) * progress
+                    default:
+                        return barHost.viewWidth
                     }
                 }
 
@@ -137,14 +130,10 @@ Scope {
                     switch (barHost.displayedView) {
                         case "osd":
                             return barHost.osdHeight + root.osdPadding * 2
-                        case "launcher":
-                            return root.launcherHeight
-                        case "wallpaper":
-                            return root.wallpaperHeight
-                        case "theme":
-                            return root.themeHeight
-                        default:
+                        case "bar":
                             return root.collapsedHeight + (root.expandedHeight - root.collapsedHeight) * progress
+                        default:
+                            return barHost.viewHeight
                     }
                 }
 
@@ -242,9 +231,10 @@ Scope {
                         id: barHost
 
                         anchors.fill: parent
+                        monitorName: window.monitor?.name ?? ""
                         barExpanded: barBody.expanded
                         expansionProgress: barBody.progress
-                        osdRequested: (OsdService.showing && window.isFocusedMonitor) || (window.fullscreen && barHost.displayedView === "osd" && barBody.hideProgress < 1)
+                        fullscreen: window.fullscreen
                         retracted: barBody.hideProgress >= 1
                     }
                 }

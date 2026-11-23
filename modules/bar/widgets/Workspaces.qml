@@ -27,7 +27,9 @@ Item {
     // The page being drawn; trails pageOffset while the slide plays.
     property int displayedPageOffset: 0
 
-    readonly property real regularWidth: HyprlandService.workspacesPerPage * Tokens.bar.workspaceDotSize + (HyprlandService.workspacesPerPage - 1) * Tokens.bar.workspaceSpacing + Tokens.bar.activeWorkspaceWidth - Tokens.bar.workspaceDotSize
+    readonly property int activeWidth: 22
+
+    readonly property real regularWidth: HyprlandService.workspacesPerPage * Tokens.bar.workspaceDotSize + (HyprlandService.workspacesPerPage - 1) * Tokens.bar.workspaceSpacing + root.activeWidth - Tokens.bar.workspaceDotSize
     readonly property real specialWidth: Tokens.spacing.xs + specialContent.implicitWidth + Tokens.spacing.sm
 
     implicitWidth: root.showingSpecial ? root.specialWidth : root.regularWidth
@@ -100,7 +102,7 @@ Item {
                     readonly property bool isOccupied: HyprlandService.isWorkspaceOccupied(workspaceId)
 
                     anchors.verticalCenter: parent.verticalCenter
-                    implicitWidth: isActive ? Tokens.bar.activeWorkspaceWidth : Tokens.bar.workspaceDotSize
+                    implicitWidth: isActive ? root.activeWidth : Tokens.bar.workspaceDotSize
                     implicitHeight: Tokens.bar.workspaceDotSize
                     radius: Tokens.radius.full
 

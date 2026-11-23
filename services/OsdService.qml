@@ -128,7 +128,7 @@ Singleton {
 
     Timer {
         running: true
-        interval: Tokens.osd.startupDelay
+        interval: Config.osd.startupDelay
         onTriggered: root.startupDelayElapsed = true
     }
 

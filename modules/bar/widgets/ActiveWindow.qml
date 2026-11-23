@@ -12,7 +12,7 @@ Item {
     id: root
 
     readonly property var desktopEntry: HyprlandService.activeAppId ? DesktopEntries.heuristicLookup(HyprlandService.activeAppId) : null
-    readonly property string iconPath: root.desktopEntry?.icon ? Quickshell.iconPath(root.desktopEntry.icon, true) : ""
+    readonly property string iconPath: IconService.source(root.desktopEntry?.icon ?? "")
 
     implicitWidth: Tokens.icon.md + Tokens.spacing.xs + nameLabel.implicitWidth
     implicitHeight: Math.max(Tokens.icon.md, nameLabel.implicitHeight)

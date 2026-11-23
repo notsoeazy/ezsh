@@ -9,6 +9,7 @@ import qs.components
 Item {
     id: root
 
+    readonly property int maxMessageWidth: 480
     readonly property bool contentChangePending: OsdService.showsLevel !== root.displayedIsLevel || (!OsdService.showsLevel && (OsdService.messageText !== root.displayedText || OsdService.icon !== root.displayedIcon))
 
     property bool displayedIsLevel: false
@@ -18,7 +19,7 @@ Item {
     property real levelValue: 0
     property string levelIcon: ""
 
-    implicitWidth: root.displayedIsLevel ? slider.width : Math.min(Tokens.osd.maxMessageWidth, messageRow.implicitWidth)
+    implicitWidth: root.displayedIsLevel ? slider.width : Math.min(root.maxMessageWidth, messageRow.implicitWidth)
     implicitHeight: root.displayedIsLevel ? slider.height : messageRow.height
 
     Behavior on implicitWidth {
@@ -135,7 +136,7 @@ Item {
             id: messageText
 
             anchors.verticalCenter: parent.verticalCenter
-            width: Math.min(implicitWidth, Tokens.osd.maxMessageWidth - messageIcon.width - messageRow.spacing - messageRow.leftPadding - messageRow.rightPadding)
+            width: Math.min(implicitWidth, root.maxMessageWidth - messageIcon.width - messageRow.spacing - messageRow.leftPadding - messageRow.rightPadding)
             elideText: true
             text: root.displayedText
             font.pixelSize: Tokens.fontSize.sm

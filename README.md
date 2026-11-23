@@ -27,4 +27,4 @@ November 22, 2026
 - [/] Services
 
 November 23, 2026
-- [ ] App Launcher
+- [/] App Launcher (apps, >commands, clipboard, symbols)

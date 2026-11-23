@@ -9,6 +9,13 @@ Singleton {
     readonly property Bar bar: Bar {}
     readonly property Osd osd: Osd {}
     readonly property Services services: Services {}
+    readonly property Launcher launcher: Launcher {}
+
+    component Launcher: QtObject {
+        readonly property string commandPrefix: ">"
+        readonly property int maxSymbolResults: 100
+        readonly property int symbolIndexTimeout: 30000
+    }
 
     component Bar: QtObject {
         readonly property int expandedWidth: 520
@@ -25,10 +32,11 @@ Singleton {
         })
         readonly property int hoverEnterDelay: 60
         readonly property int hoverExitDelay: 200
-        readonly property int borderGap: 0
+        readonly property int borderGap: 10
     }
 
     component Osd: QtObject {
+        readonly property int startupDelay: 2000
         readonly property bool enabled: true
         readonly property bool showVolume: true
         readonly property bool showBrightness: true

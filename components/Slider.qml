@@ -17,8 +17,11 @@ Item {
     signal valueRequested(real value)
     signal stepRequested(real direction)
 
-    implicitWidth: Tokens.osd.sliderWidth
-    implicitHeight: Tokens.osd.sliderHeight
+    readonly property int defaultWidth: 224
+    readonly property int defaultHeight: 28
+
+    implicitWidth: root.defaultWidth
+    implicitHeight: root.defaultHeight
 
     Accessible.role: Accessible.Slider
     Accessible.name: root.icon

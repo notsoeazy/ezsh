@@ -12,10 +12,12 @@ Singleton {
     readonly property AnimationDurations animDuration: AnimationDurations {}
     readonly property Opacity opacity: Opacity {}
     readonly property Bar bar: Bar {}
-    readonly property Osd osd: Osd {}
+    readonly property Launcher launcher: Launcher {}
+    readonly property IconThumbnail iconThumbnail: IconThumbnail {}
 
     component Fonts: QtObject {
         readonly property string family: "Inter"
+        readonly property string nerd: "JetBrainsMono Nerd Font"
         readonly property int thin: 300
         readonly property int light: 400
         readonly property int regular: 500
@@ -81,17 +83,17 @@ Singleton {
         readonly property real disabledContainer: 0.12
     }
 
-    component Osd: QtObject {
-        readonly property int sliderWidth: 224
-        readonly property int sliderHeight: 28
-        readonly property int maxMessageWidth: 480
-        readonly property int startupDelay: 2000
+    component IconThumbnail: QtObject {
+        readonly property int size: 64
+    }
+
+    component Launcher: QtObject {
+        readonly property int rowHeight: 50
     }
 
     component Bar: QtObject {
         readonly property int iconButtonSize: 26
         readonly property int workspaceDotSize: 9
-        readonly property int activeWorkspaceWidth: 22
         readonly property int workspaceSpacing: 6
         readonly property int horizontalPadding: 16
         readonly property int verticalPadding: 8
