@@ -13,13 +13,12 @@ import qs.modules
 Scope {
     id: root
 
-    // Matches the Border so the bar reads as part of the frame.
     readonly property color backgroundColor: Theme.color.m3background
 
-    readonly property int collapsedHeight: Config.bar.collapsedHeight
+    readonly property int collapsedHeight: Tokens.bar.collapsedHeight
 
     readonly property int expandedWidth: Config.bar.expandedWidth
-    readonly property int expandedHeight: Config.bar.expandedHeight
+    readonly property int expandedHeight: Tokens.bar.expandedHeight
 
     readonly property int launcherWidth: 620
     readonly property int launcherHeight: 380
@@ -32,6 +31,8 @@ Scope {
 
     readonly property int cornerRadius: Config.bar.cornerRadius
 
+    readonly property int osdPadding: Tokens.spacing.xs
+
     Variants {
         model: Quickshell.screens
 
@@ -39,118 +40,87 @@ Scope {
             id: window
 
             required property var modelData
-            screen: modelData
-
             readonly property var monitor: HyprlandService.monitorFor(window.screen)
-            readonly property bool focused: window.monitor?.name === HyprlandService.focusedMonitor
-            readonly property bool fullscreen: HyprlandService.fullscreenOn(window.monitor)
+            readonly property bool isFocusedMonitor: window.monitor?.name === HyprlandService.focusedMonitorName
+            readonly property bool fullscreen: HyprlandService.isFullscreenOn(window.monitor)
+            readonly property real borderThickness: Config.border.thickness * (1 - window.fullscreenProgress)
 
-            // 0..1 into fullscreen: the frame thins to nothing toward the screen edges and the
-            // bar rides its inner edge. One value for frame and bar, so they never drift apart.
-            property real fsProgress: window.fullscreen ? 1 : 0
+            property real fullscreenProgress: window.fullscreen ? 1 : 0
 
-            Behavior on fsProgress {
+            screen: modelData
+            
+            Behavior on fullscreenProgress {
                 Anim {}
             }
 
-            readonly property real borderThickness: Config.border.thickness * (1 - window.fsProgress)
-
-            // One window for the frame and the bar, as in caelestia.
             anchors { top: true; bottom: true; left: true; right: true }
 
             color: "transparent"
             exclusionMode: ExclusionMode.Ignore
             focusable: false
 
-            // Above fullscreen windows only while that is needed: the frame's exit animation, and the OSD.
-            WlrLayershell.layer: window.fsProgress > 0 ? WlrLayer.Overlay : WlrLayer.Top
+            WlrLayershell.layer: window.fullscreenProgress > 0 || HyprlandService.hasFullscreenUnderSpecial(window.monitor) ? WlrLayer.Overlay : WlrLayer.Top
             WlrLayershell.namespace: "quickshell-bar"
 
-            // Only the bar's body receives input, not the frame or the empty corner margins beside an
-            // island, and nothing while the bar is tucked away above a fullscreen window.
-            mask: Region { item: surface.retract < 1 ? contentLayer : null }
+            mask: Region { item: barBody.hideProgress < 1 ? contentLayer : null }
 
             Border {
                 anchors.fill: parent
                 thickness: window.borderThickness
-                radius: Config.border.radius * (1 - window.fsProgress)
+                cornerRadius: Config.border.radius * (1 - window.fullscreenProgress)
             }
 
             Item {
-                id: surface
+                id: barBody
 
-                anchors {
-                    top: parent.top
-                    horizontalCenter: parent.horizontalCenter
-                }
+                anchors.top: parent.top
+                x: (parent.width - width) / 2
+                anchors.topMargin: restingTopMargin - hideProgress * (restingTopMargin + height)
 
-                // A notch hangs from the frame's inner edge (the screen edge in fullscreen); an island
-                // floats floatingGap below it. Retracting slides the bar up past the screen's top edge.
-                readonly property real restTop: window.borderThickness + (Config.bar.floating ? Config.bar.floatingGap : 0)
-                anchors.topMargin: restTop - retract * (restTop + height)
+                readonly property real restingTopMargin: window.borderThickness + (Config.bar.floating ? Config.bar.floatingGap : 0)
+                readonly property bool isFloating: Config.bar.floating
+                readonly property bool showsOsd: OsdService.showing && window.isFocusedMonitor && barHost.osdAllowed
+                readonly property bool expanded: hoverHandler.hovered && barHost.displayedView === "bar" && !window.fullscreen
 
-                readonly property bool island: Config.bar.floating
+                property real hideProgress: window.fullscreen && !showsOsd ? 1 : 0
+                property real progress: expanded ? 1 : 0
+                property real previousWidth: 0
+                property real previousHeight: 0
+                property real resizeProgress: 1
 
-                // The OSD wants this screen (focused monitor) and may show over what is open.
-                readonly property bool osdWanted: OsdService.active && window.focused && host.osdAllowed
-
-                // 0 shown .. 1 tucked above the screen. Fullscreen tucks the bar away; the OSD drops
-                // down from above and goes back up when done.
-                property real retract: window.fullscreen && !osdWanted ? 1 : 0
-
-                Behavior on retract {
+                Behavior on hideProgress {
                     Anim {}
                 }
-
-                readonly property bool expanded:
-                    hover.hovered &&
-                    host.shownView === "bar" &&
-                    !window.fullscreen
-
-                // The one clock for expand/collapse: the bar view's shape and its content both follow it,
-                // so width, height and content always move together.
-                property real progress: expanded ? 1 : 0
 
                 Behavior on progress {
                     Anim {}
                 }
 
-                // Switching views blends from the size at the moment of the switch to the new view's
-                // target, even while that target moves (the bar view follows `progress`). A Behavior
-                // would restart on every frame of a moving target and stall.
-                property real fromWidth: 0
-                property real fromHeight: 0
-                property real blend: 1
-
                 Connections {
-                    target: host
+                    target: barHost
 
-                    function onViewChanging(animate) {
-                        blendAnim.stop()
-                        surface.fromWidth = surface.bodyWidth
-                        surface.fromHeight = surface.bodyHeight
-                        // Out of sight (tucked above a fullscreen window): take the new size at once,
-                        // so the OSD drops in at its own size instead of shrinking from the bar's.
-                        surface.blend = animate ? 0 : 1
-                        if (animate)
-                            blendAnim.restart()
+                    function onViewChangeStarting(animate) {
+                        resizeAnim.stop()
+                        barBody.previousWidth = barBody.bodyWidth
+                        barBody.previousHeight = barBody.bodyHeight
+                        barBody.resizeProgress = animate ? 0 : 1
+                        if (animate) resizeAnim.restart()
                     }
                 }
 
                 Anim {
-                    id: blendAnim
+                    id: resizeAnim
 
-                    target: surface
-                    property: "blend"
+                    target: barBody
+                    property: "resizeProgress"
                     from: 0
                     to: 1
                 }
 
-                // The view selects its preferred dimensions.
                 readonly property real targetWidth: {
-                    switch (host.shownView) {
+                    switch (barHost.displayedView) {
                     case "osd":
-                        return host.osdWidth + Tokens.spacing.md * 2
+                        return barHost.osdWidth + root.osdPadding * 2
                     case "launcher":
                         return root.launcherWidth
                     case "wallpaper":
@@ -158,49 +128,43 @@ Scope {
                     case "theme":
                         return root.themeWidth
                     default:
-                        // Sized by content; expanded keeps a minimum so its hidden rows have room.
-                        // Content width already animates smoothly, so no Behavior is needed here.
-                        return host.barContentWidth
-                            + (Math.max(root.expandedWidth, host.barContentWidth) - host.barContentWidth) * progress
+                        return barHost.barContentWidth
+                            + (Math.max(root.expandedWidth, barHost.barContentWidth) - barHost.barContentWidth) * progress
                     }
                 }
 
                 readonly property real targetHeight: {
-                    switch (host.shownView) {
-                    case "osd":
-                        return root.collapsedHeight
-                    case "launcher":
-                        return root.launcherHeight
-                    case "wallpaper":
-                        return root.wallpaperHeight
-                    case "theme":
-                        return root.themeHeight
-                    default:
-                        return root.collapsedHeight
-                            + (root.expandedHeight - root.collapsedHeight) * progress
+                    switch (barHost.displayedView) {
+                        case "osd":
+                            return barHost.osdHeight + root.osdPadding * 2
+                        case "launcher":
+                            return root.launcherHeight
+                        case "wallpaper":
+                            return root.wallpaperHeight
+                        case "theme":
+                            return root.themeHeight
+                        default:
+                            return root.collapsedHeight + (root.expandedHeight - root.collapsedHeight) * progress
                     }
                 }
 
-                readonly property real bodyWidth: fromWidth + (targetWidth - fromWidth) * blend
-                readonly property real bodyHeight: fromHeight + (targetHeight - fromHeight) * blend
-                // 1: top corners curve outward into the border (notch). -1: they round inward (island).
-                property real shoulder: island ? -1 : 1
-
-                // An island is a pill at its collapsed height.
-                readonly property real radius: Math.min(island ? root.collapsedHeight / 2 : root.cornerRadius, bodyWidth / 2)
-
+                readonly property real bodyWidth: previousWidth + (targetWidth - previousWidth) * resizeProgress
+                readonly property real bodyHeight: previousHeight + (targetHeight - previousHeight) * resizeProgress
+                readonly property real radius: Math.min(isFloating ? root.collapsedHeight / 2 : root.cornerRadius, bodyWidth / 2)
                 readonly property real radiusY: Math.min(radius, bodyHeight / 2)
+                readonly property real shoulderRadiusX: Math.max(0.01, radius * Math.abs(cornerFlip))
+                readonly property real shoulderRadiusY: Math.max(0.01, radiusY * Math.abs(cornerFlip))
+                readonly property int cornerSweep: cornerFlip >= 0 ? PathArc.Clockwise : PathArc.Counterclockwise
 
-                readonly property real cornerX: Math.max(0.01, radius * Math.abs(shoulder))
+                property real cornerFlip: isFloating ? -1 : 1
 
-                readonly property real cornerY: Math.max(0.01, radiusY * Math.abs(shoulder))
-
-                readonly property int cornerSweep: shoulder >= 0 ? PathArc.Clockwise : PathArc.Counterclockwise
+                Behavior on cornerFlip {
+                    Anim {}
+                }
 
                 width: bodyWidth + radius * 2
                 height: bodyHeight
 
-                // The morphing surface.
                 Shape {
                     anchors.fill: parent
                     preferredRendererType: Shape.CurveRenderer
@@ -209,90 +173,80 @@ Scope {
                         fillColor: root.backgroundColor
                         strokeWidth: -1
 
-                        startX: surface.radius * (1 - surface.shoulder)
+                        startX: barBody.radius * (1 - barBody.cornerFlip)
                         startY: 0
 
                         PathArc {
-                            relativeX: surface.radius * surface.shoulder
-                            relativeY: surface.cornerY
-                            radiusX: surface.cornerX
-                            radiusY: surface.cornerY
-                            direction: surface.cornerSweep
+                            relativeX: barBody.radius * barBody.cornerFlip
+                            relativeY: barBody.shoulderRadiusY
+                            radiusX: barBody.shoulderRadiusX
+                            radiusY: barBody.shoulderRadiusY
+                            direction: barBody.cornerSweep
                         }
 
                         PathLine {
                             relativeX: 0
-                            relativeY: surface.bodyHeight - surface.radiusY - surface.cornerY
+                            relativeY: barBody.bodyHeight - barBody.radiusY - barBody.shoulderRadiusY
                         }
 
                         PathArc {
-                            relativeX: surface.radius
-                            relativeY: surface.radiusY
-                            radiusX: surface.radius
-                            radiusY: surface.radiusY
+                            relativeX: barBody.radius
+                            relativeY: barBody.radiusY
+                            radiusX: barBody.radius
+                            radiusY: barBody.radiusY
                             direction: PathArc.Counterclockwise
                         }
 
                         PathLine {
-                            relativeX: surface.bodyWidth - surface.radius * 2
+                            relativeX: barBody.bodyWidth - barBody.radius * 2
                             relativeY: 0
                         }
 
                         PathArc {
-                            relativeX: surface.radius
-                            relativeY: -surface.radiusY
-                            radiusX: surface.radius
-                            radiusY: surface.radiusY
+                            relativeX: barBody.radius
+                            relativeY: -barBody.radiusY
+                            radiusX: barBody.radius
+                            radiusY: barBody.radiusY
                             direction: PathArc.Counterclockwise
                         }
 
                         PathLine {
                             relativeX: 0
-                            relativeY: -(surface.bodyHeight - surface.radiusY - surface.cornerY)
+                            relativeY: -(barBody.bodyHeight - barBody.radiusY - barBody.shoulderRadiusY)
                         }
 
                         PathArc {
-                            relativeX: surface.radius * surface.shoulder
-                            relativeY: -surface.cornerY
-                            radiusX: surface.cornerX
-                            radiusY: surface.cornerY
-                            direction: surface.cornerSweep
+                            relativeX: barBody.radius * barBody.cornerFlip
+                            relativeY: -barBody.shoulderRadiusY
+                            radiusX: barBody.shoulderRadiusX
+                            radiusY: barBody.shoulderRadiusY
+                            direction: barBody.cornerSweep
                         }
                     }
                 }
 
-                // Watches the entire Bar for hover.
                 HoverHandler {
-                    id: hover
+                    id: hoverHandler
                 }
 
-                // Visual content sits inside the body.
                 Item {
                     id: contentLayer
 
-                    x: surface.radius
-                    width: surface.bodyWidth
-                    height: surface.bodyHeight
+                    x: barBody.radius
+                    width: barBody.bodyWidth
+                    height: barBody.bodyHeight
 
                     clip: true
 
                     BarHost {
-                        id: host
+                        id: barHost
 
                         anchors.fill: parent
-                        barExpanded: surface.expanded
-                        barProgress: surface.progress
-                        // Keep the OSD in the bar while it slides away above a fullscreen window,
-                        // so the bar view never shows on the way out.
-                        osdRequested: (OsdService.active && window.focused)
-                            || (window.fullscreen && host.shownView === "osd" && surface.retract < 1)
-                        // Fully tucked away: views can swap at once, nobody sees it.
-                        hidden: surface.retract >= 1
+                        barExpanded: barBody.expanded
+                        expansionProgress: barBody.progress
+                        osdRequested: (OsdService.showing && window.isFocusedMonitor) || (window.fullscreen && barHost.displayedView === "osd" && barBody.hideProgress < 1)
+                        retracted: barBody.hideProgress >= 1
                     }
-                }
-
-                Behavior on shoulder {
-                    Anim {}
                 }
             }
         }

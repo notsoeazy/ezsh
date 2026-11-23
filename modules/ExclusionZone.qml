@@ -2,16 +2,15 @@ import Quickshell
 import Quickshell.Wayland
 import QtQuick
 
+import qs
 import qs.config
 
 Scope {
     id: root
 
     readonly property int borderThickness: Config.border.thickness
-    readonly property int edgeReservation: Math.max(0, root.borderThickness)
-    // Border + bar + borderGap below it; a floating island also has floatingGap above it.
-    readonly property int topReservation: root.edgeReservation + Config.bar.collapsedHeight + Config.bar.borderGap
-        + (Config.bar.floating ? Config.bar.floatingGap : 0)
+    readonly property int edgeReservation: Math.max(0, root.borderThickness + Config.border.gap)
+    readonly property int topReservation: Tokens.bar.collapsedHeight + Config.bar.borderGap + (Config.bar.floating ? Config.bar.floatingGap : 0)
 
     Variants {
         model: Quickshell.screens
@@ -25,22 +24,22 @@ Scope {
                 model: ["top", "bottom", "left", "right"]
 
                 PanelWindow {
-                    id: zone
+                    id: edgePanel
 
                     required property string modelData
-                    readonly property bool horizontal: modelData === "top" || modelData === "bottom"
+                    readonly property bool isHorizontalEdge: modelData === "top" || modelData === "bottom"
 
                     screen: screenScope.modelData
 
                     anchors {
-                        top: modelData === "top" || !horizontal
-                        bottom: modelData === "bottom" || !horizontal
-                        left: modelData === "left" || horizontal
-                        right: modelData === "right" || horizontal
+                        top: modelData === "top" || !isHorizontalEdge
+                        bottom: modelData === "bottom" || !isHorizontalEdge
+                        left: modelData === "left" || isHorizontalEdge
+                        right: modelData === "right" || isHorizontalEdge
                     }
 
-                    implicitWidth: horizontal ? 1 : root.edgeReservation
-                    implicitHeight: horizontal ? root.edgeReservation : 1
+                    implicitWidth: isHorizontalEdge ? 1 : root.edgeReservation
+                    implicitHeight: isHorizontalEdge ? root.edgeReservation : 1
 
                     exclusiveZone: modelData === "top" ? root.topReservation : root.edgeReservation
 

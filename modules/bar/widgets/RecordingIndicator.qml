@@ -9,14 +9,14 @@ import qs.components
 Reveal {
     id: root
 
-    shown: HyprlandService.screencasting
+    revealed: HyprlandService.screencasting
     leadingGap: Tokens.spacing.md
 
     StyledRectangle {
         id: dot
 
-        implicitWidth: Tokens.bar.workspaceDot
-        implicitHeight: Tokens.bar.workspaceDot
+        implicitWidth: Tokens.bar.workspaceDotSize
+        implicitHeight: Tokens.bar.workspaceDotSize
         radius: Tokens.radius.full
         color: Theme.color.m3error
 

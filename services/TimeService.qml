@@ -7,16 +7,16 @@ import Quickshell
 Singleton {
     id: root
 
-    readonly property date now: clock.date
+    readonly property date now: systemClock.date
 
-    readonly property string time: Qt.formatDateTime(root.now, "h:mm AP")
+    readonly property string clockText: Qt.formatDateTime(root.now, "h:mm AP")
 
-    readonly property string dateText: Qt.formatDateTime(root.now, "dddd, MMMM d")
+    readonly property string longDate: Qt.formatDateTime(root.now, "dddd, MMMM d")
 
     readonly property string shortDate: Qt.formatDateTime(root.now, "ddd, MMM d")
 
     SystemClock {
-        id: clock
+        id: systemClock
         precision: SystemClock.Minutes
     }
 }

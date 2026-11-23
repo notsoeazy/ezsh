@@ -10,10 +10,10 @@ import qs.themes
 Item {
     id: root
 
-    readonly property string iconName: osRelease.text().match(/^LOGO=["']?([^"'\n]*)/m)?.[1] ?? ""
-    readonly property bool available: root.iconName !== "" && logo.status !== Image.Error
+    readonly property string logoIconName: osRelease.text().match(/^LOGO=["']?([^"'\n]*)/m)?.[1] ?? ""
+    readonly property bool available: root.logoIconName !== "" && logo.status !== Image.Error
 
-    signal activated()
+    signal clicked()
 
     visible: root.available
     implicitWidth: root.available ? Tokens.icon.md : 0
@@ -30,7 +30,7 @@ Item {
         id: logo
 
         anchors.fill: parent
-        source: root.iconName ? Quickshell.iconPath(root.iconName, true) : ""
+        source: root.logoIconName ? Quickshell.iconPath(root.logoIconName, true) : ""
         sourceSize: Qt.size(Tokens.icon.md * Screen.devicePixelRatio, Tokens.icon.md * Screen.devicePixelRatio)
         fillMode: Image.PreserveAspectFit
         asynchronous: true
@@ -47,6 +47,6 @@ Item {
     MouseArea {
         anchors.fill: parent
         cursorShape: Qt.PointingHandCursor
-        onClicked: root.activated()
+        onClicked: root.clicked()
     }
 }

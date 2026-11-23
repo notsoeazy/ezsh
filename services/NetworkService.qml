@@ -5,8 +5,6 @@ import Quickshell
 import Quickshell.Io
 import Quickshell.Networking
 
-import "nmcli.js" as Nmcli
-
 // shortcut: icon state only; add scanning/connect actions when the network view exists.
 Singleton {
     id: root
@@ -16,46 +14,47 @@ Singleton {
     readonly property bool wiredConnected: root.devices.some(d => d.type === DeviceType.Wired && d.connected)
     readonly property var wifiDevice: root.devices.find(d => d.type === DeviceType.Wifi) ?? null
 
-    readonly property bool connected: root.wiredConnected || root.wifiNetwork !== null
+    readonly property bool online: root.wiredConnected || root.connectedWifiNetwork !== null
 
-    readonly property var wifiNetwork: {
+    readonly property var connectedWifiNetwork: {
         if (!root.wifiDevice?.connected)
             return null;
-        const nets = root.wifiDevice.networks.values;
-        return nets.find(n => n.connected) ?? nets.find(n => n.name === root.activeSsid) ?? null;
+        const networks = root.wifiDevice.networks.values;
+        return networks.find(n => n.connected) ?? networks.find(n => n.name === root.activeWifiSsid) ?? null;
     }
 
     // 0..1
-    readonly property real signalStrength: root.wifiNetwork?.signalStrength ?? 0
+    readonly property real wifiSignalStrength: root.connectedWifiNetwork?.signalStrength ?? 0
 
     readonly property string icon: {
         if (root.wiredConnected)
             return "lan";
         if (!Networking.wifiEnabled)
             return "wifi_off";
-        if (!root.wifiNetwork)
+        if (!root.connectedWifiNetwork)
             return "signal_wifi_statusbar_not_connected";
-        if (root.signalStrength > 0.75)
+        if (root.wifiSignalStrength > 0.75)
             return "signal_wifi_4_bar";
-        if (root.signalStrength > 0.5)
+        if (root.wifiSignalStrength > 0.5)
             return "network_wifi_3_bar";
-        if (root.signalStrength > 0.25)
+        if (root.wifiSignalStrength > 0.25)
             return "network_wifi_2_bar";
         return "network_wifi_1_bar";
     }
 
     // Network.connected stays false on quickshell 0.3.2-git even while the
     // device is connected, so resolve the active SSID from NetworkManager.
-    property string activeSsid: ""
-    readonly property int wifiState: root.wifiDevice?.state ?? 0
-    onWifiStateChanged: ssidProc.running = true
+    property string activeWifiSsid: ""
+    readonly property int wifiDeviceState: root.wifiDevice?.state ?? 0
+    onWifiDeviceStateChanged: ssidLookup.running = true
 
     Process {
-        id: ssidProc
+        id: ssidLookup
 
-        command: ["nmcli", "-t", "-g", "ACTIVE,SSID", "dev", "wifi", "list", "--rescan", "no"]
+        // `-e no`: SSID is the last field, so unescaped colons in it are harmless.
+        command: ["nmcli", "-t", "-e", "no", "-g", "ACTIVE,SSID", "dev", "wifi", "list", "--rescan", "no"]
         stdout: StdioCollector {
-            onStreamFinished: root.activeSsid = Nmcli.activeSsid(text)
+            onStreamFinished: root.activeWifiSsid = text.split("\n").find(l => l.startsWith("yes:"))?.slice(4) ?? ""
         }
     }
 }

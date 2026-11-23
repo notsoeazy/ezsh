@@ -7,85 +7,81 @@ import Quickshell.Io
 Scope {
     id: root
 
-    property string device: ""
+    property string deviceName: ""
     property string deviceClass: ""
-    property int maximum: 1
-    // Lowest level set() goes to, e.g. 1 so the screen never goes fully dark.
-    property int minimum: 0
-    // Firmware hotkeys change some devices without a file event, so read them on a timer too.
-    property bool poll: false
-    // Change per step(), 0..1.
-    property real stepSize: 0.05
+    property int maxRaw: 1
+    property int minRaw: 0
+    property bool pollForChanges: false
+    property real stepFraction: 0.05
 
-    property int raw: 0
-    // The level last asked for, shown until the write lands so the value doesn't jump back.
-    property int desired: -1
-    property int pending: -1
+    property int rawLevel: 0
+    property int requestedRaw: -1
+    property int queuedRaw: -1
 
-    readonly property bool available: root.device !== ""
-    readonly property real value: (root.desired >= 0 ? root.desired : root.raw) / root.maximum
+    readonly property bool available: root.deviceName !== ""
+    readonly property real level: (root.requestedRaw >= 0 ? root.requestedRaw : root.rawLevel) / root.maxRaw
 
-    function attach(device, deviceClass, maximum) {
+    function useDevice(name, deviceClass, maxRaw) {
         root.deviceClass = deviceClass;
-        root.maximum = Math.max(1, maximum);
-        root.device = device;
+        root.maxRaw = Math.max(1, maxRaw);
+        root.deviceName = name;
     }
 
     // Level 0..1.
-    function set(value) {
+    function setLevel(value) {
         if (!root.available || !isFinite(value))
             return;
-        root.desired = Math.max(root.minimum, Math.min(root.maximum, Math.round(value * root.maximum)));
-        root.pending = root.desired;
-        root.writeNext();
+        root.requestedRaw = Math.max(root.minRaw, Math.min(root.maxRaw, Math.round(value * root.maxRaw)));
+        root.queuedRaw = root.requestedRaw;
+        root.writeQueuedLevel();
     }
 
-    // One stepSize up (+1) or down (-1).
-    function step(direction) {
-        root.set(root.value + direction * root.stepSize);
+    // One stepFraction up (+1) or down (-1).
+    function stepLevel(direction) {
+        root.setLevel(root.level + direction * root.stepFraction);
     }
 
-    function writeNext() {
-        if (writer.running || root.pending < 0)
+    function writeQueuedLevel() {
+        if (brightnessctlWriter.running || root.queuedRaw < 0)
             return;
-        writer.command = ["brightnessctl", "--quiet", "--device", root.device, "set", String(root.pending)];
-        root.pending = -1;
-        writer.running = true;
+        brightnessctlWriter.command = ["brightnessctl", "--quiet", "--device", root.deviceName, "set", String(root.queuedRaw)];
+        root.queuedRaw = -1;
+        brightnessctlWriter.running = true;
     }
 
     Process {
-        id: writer
+        id: brightnessctlWriter
 
         onExited: code => {
             if (code !== 0)
-                console.warn("BacklightDevice: brightnessctl failed for", root.device, code);
-            if (root.pending >= 0)
-                Qt.callLater(root.writeNext);
+                console.warn("BacklightDevice: brightnessctl failed for", root.deviceName, code);
+            if (root.queuedRaw >= 0)
+                Qt.callLater(root.writeQueuedLevel);
             else
-                reader.reload();
+                sysfsReader.reload();
         }
     }
 
     FileView {
-        id: reader
+        id: sysfsReader
 
-        path: root.available ? `/sys/class/${root.deviceClass}/${root.device}/brightness` : ""
+        path: root.available ? `/sys/class/${root.deviceClass}/${root.deviceName}/brightness` : ""
         watchChanges: true
         printErrors: false
         onFileChanged: reload()
         onLoaded: {
-            const level = Number(text().trim());
-            if (isFinite(level))
-                root.raw = level;
-            if (root.pending < 0 && !writer.running)
-                root.desired = -1;
+            const parsed = Number(text().trim());
+            if (isFinite(parsed))
+                root.rawLevel = parsed;
+            if (root.queuedRaw < 0 && !brightnessctlWriter.running)
+                root.requestedRaw = -1;
         }
     }
 
     Timer {
         interval: 500
         repeat: true
-        running: root.available && root.poll
-        onTriggered: reader.reload()
+        running: root.available && root.pollForChanges
+        onTriggered: sysfsReader.reload()
     }
 }

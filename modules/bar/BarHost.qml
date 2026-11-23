@@ -10,101 +10,88 @@ import "views"
 Item {
     id: root
 
-    // Where navigation is; `shownView` is what is drawn, which is "osd" while the OSD is up.
-    property string currentView: "bar"
-    property string shownView: "bar"
-    property bool barExpanded: false
-    property real barProgress: 0
-    // The OSD wants to show on this bar's screen; whether it may is decided here.
-    property bool osdRequested: false
     readonly property real barContentWidth: barView.contentWidth
     readonly property real osdWidth: osdView.implicitWidth
-
-    // The bar is out of sight (tucked above a fullscreen window): views swap at once.
-    property bool hidden: false
-
-    // A view that already shows these controls (the control panel) sets `coversOsd` and hides the OSD.
+    readonly property real osdHeight: osdView.implicitHeight
     readonly property bool coversOsd: viewLoader.item?.coversOsd === true
-    readonly property bool osdAllowed: !coversOsd && (currentView === "bar" || Config.osd.overViews)
-    readonly property string wantedView: osdRequested && osdAllowed ? "osd" : currentView
+    readonly property bool osdAllowed: !coversOsd && (requestedView === "bar" || Config.osd.showOverViews)
+    readonly property string targetView: osdRequested && osdAllowed ? "osd" : requestedView
 
-    // True while the old view fades out; the bar holds its size until the swap.
-    property bool switching: false
+    property string requestedView: "bar"
+    property string displayedView: "bar"
+    property bool barExpanded: false
+    property real expansionProgress: 0
+    property bool osdRequested: false
+    property bool retracted: false
+    property bool fadingBetweenViews: false
 
-    // Emitted just before shownView changes, so Bar.qml can animate the size jump;
-    // `animate` is false when the bar is out of sight and should take the new size at once.
-    signal viewChanging(bool animate)
+    signal viewChangeStarting(bool animate)
 
-    // Old view fades out, then the swap: the bar resizes while the new view fades in.
-    function switchView() {
-        if (wantedView === shownView) {
-            viewSwitch.stop()
-            switching = false
-        } else if (hidden) {
-            viewSwitch.stop()
-            switching = false
-            // Deferred: committing changes inputs of the binding that triggered this.
-            Qt.callLater(commitIfWanted)
-        } else if (!viewSwitch.running) {
-            viewSwitch.restart()
+    function scheduleViewSwitch() {
+        if (targetView === displayedView) {
+            viewFade.stop()
+            fadingBetweenViews = false
+        } else if (retracted) {
+            viewFade.stop()
+            fadingBetweenViews = false
+            Qt.callLater(showTargetView)
+        } else if (!viewFade.running) {
+            viewFade.restart()
         }
     }
 
-    function commitIfWanted() {
-        if (wantedView === shownView)
+    function showTargetView() {
+        if (targetView === displayedView)
             return
 
-        viewChanging(!hidden)
-        shownView = wantedView
+        viewChangeStarting(!retracted)
+        displayedView = targetView
     }
 
-    onWantedViewChanged: switchView()
-    onHiddenChanged: switchView()
+    onTargetViewChanged: scheduleViewSwitch()
+    onRetractedChanged: scheduleViewSwitch()
 
     SequentialAnimation {
-        id: viewSwitch
+        id: viewFade
 
         ScriptAction {
-            script: root.switching = true
+            script: root.fadingBetweenViews = true
         }
         PauseAnimation {
             duration: Tokens.animDuration.effectsFast
         }
         ScriptAction {
-            // Picks up the latest wanted view if it changed during the fade.
             script: {
-                root.switching = false
-                root.commitIfWanted()
+                root.fadingBetweenViews = false
+                root.showTargetView()
             }
         }
     }
 
-    // Navigation API
-    function navigate(view) {
-        currentView = view
+    function navigateTo(view) {
+        requestedView = view
     }
 
     function goHome() {
-        navigate("bar")
+        navigateTo("bar")
     }
 
     function goBack() {
         goHome()
     }
 
-    // The normal Bar remains instantiated.
     BarView {
         id: barView
 
         anchors.fill: parent
 
         expanded: root.barExpanded
-        progress: root.barProgress
+        progress: root.expansionProgress
 
-        opacity: root.shownView === "bar" && !root.switching ? 1 : 0
+        opacity: root.displayedView === "bar" && !root.fadingBetweenViews ? 1 : 0
         visible: opacity > 0
 
-        onNavigateRequested: view => root.navigate(view)
+        onNavigateRequested: view => root.navigateTo(view)
 
         Behavior on opacity {
             Anim {
@@ -113,18 +100,17 @@ Item {
         }
     }
 
-    // Secondary views are loaded on demand.
     Loader {
         id: viewLoader
 
         anchors.fill: parent
 
-        active: root.currentView !== "bar"
+        active: root.requestedView !== "bar"
         asynchronous: true
 
         sourceComponent: placeholderView
 
-        opacity: root.shownView === root.currentView && !root.switching && status === Loader.Ready ? 1 : 0
+        opacity: root.displayedView === root.requestedView && !root.fadingBetweenViews && status === Loader.Ready ? 1 : 0
         visible: opacity > 0
 
         Behavior on opacity {
@@ -137,9 +123,10 @@ Item {
     OsdView {
         id: osdView
 
-        anchors.centerIn: parent
+        x: (parent.width - width) / 2
+        y: (parent.height - height) / 2
 
-        opacity: root.shownView === "osd" && !root.switching ? 1 : 0
+        opacity: root.displayedView === "osd" && !root.fadingBetweenViews ? 1 : 0
         visible: opacity > 0
 
         Behavior on opacity {
@@ -165,7 +152,7 @@ Item {
                 }
 
                 text: {
-                    switch (root.currentView) {
+                    switch (root.requestedView) {
                     case "launcher":
                         return "Launcher"
                     case "wallpaper":

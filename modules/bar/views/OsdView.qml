@@ -6,90 +6,21 @@ import qs.themes
 import qs.services
 import qs.components
 
-// The bar while the OSD is up: a draggable level slider, or an icon + message.
-// Switching between slider and message, or to a different message, fades the old content out
-// first and only then swaps, so the bar never resizes around content that is leaving or not there yet.
 Item {
     id: root
 
-    // What is drawn; trails OsdService until the old content has faded out.
-    property bool shownIsLevel: false
-    property string shownText: ""
-    property string shownIcon: ""
-    property real contentOpacity: 1
+    readonly property bool contentChangePending: OsdService.showsLevel !== root.displayedIsLevel || (!OsdService.showsLevel && (OsdService.messageText !== root.displayedText || OsdService.icon !== root.displayedIcon))
 
-    // The slider keeps its last value and icon while it fades out to a message.
+    property bool displayedIsLevel: false
+    property string displayedText: ""
+    property string displayedIcon: ""
+    property real contentOpacity: 1
     property real levelValue: 0
     property string levelIcon: ""
 
-    Binding {
-        target: root
-        property: "levelValue"
-        value: OsdService.value
-        when: OsdService.isLevel
-        restoreMode: Binding.RestoreNone
-    }
+    implicitWidth: root.displayedIsLevel ? slider.width : Math.min(Tokens.osd.maxMessageWidth, messageRow.implicitWidth)
+    implicitHeight: root.displayedIsLevel ? slider.height : messageRow.height
 
-    Binding {
-        target: root
-        property: "levelIcon"
-        value: OsdService.icon
-        when: OsdService.isLevel
-        restoreMode: Binding.RestoreNone
-    }
-
-    readonly property bool pending: OsdService.isLevel !== root.shownIsLevel
-        || (!OsdService.isLevel && (OsdService.text !== root.shownText || OsdService.icon !== root.shownIcon))
-
-    function syncShown() {
-        root.shownIsLevel = OsdService.isLevel;
-        root.shownText = OsdService.text;
-        root.shownIcon = OsdService.icon;
-    }
-
-    Component.onCompleted: root.syncShown()
-
-    onPendingChanged: {
-        if (!root.pending)
-            return;
-        // Off screen there is nothing to fade: swap at once.
-        if (!root.visible) {
-            swap.stop();
-            root.contentOpacity = 1;
-            // Deferred: changing what `pending` reads from inside its own change handler loops.
-            Qt.callLater(root.syncShown);
-        } else if (!swap.running) {
-            swap.restart();
-        }
-    }
-
-    SequentialAnimation {
-        id: swap
-
-        Anim {
-            target: root
-            property: "contentOpacity"
-            to: 0
-            duration: Tokens.animDuration.effectsFast
-            easing.type: Easing.InCubic
-        }
-        // Picks up the latest state if it changed during the fade.
-        ScriptAction {
-            script: root.syncShown()
-        }
-        Anim {
-            target: root
-            property: "contentOpacity"
-            to: 1
-            duration: Tokens.animDuration.effects
-        }
-    }
-
-    // Follows the shown content; the bar resizes with it.
-    implicitWidth: root.shownIsLevel ? slider.width : Math.min(Tokens.osd.maxMessageWidth, message.implicitWidth)
-    implicitHeight: Config.bar.collapsedHeight
-
-    // Only while seen: off screen the width snaps, so the OSD appears at its real size.
     Behavior on implicitWidth {
         enabled: root.visible
 
@@ -99,27 +30,97 @@ Item {
         }
     }
 
+    Behavior on implicitHeight {
+        enabled: root.visible
+
+        Anim {
+            duration: Tokens.animDuration.spatialFast
+            easing.type: Easing.OutCubic
+        }
+    }
+
+    Binding {
+        target: root
+        property: "levelValue"
+        value: OsdService.level
+        when: OsdService.showsLevel
+        restoreMode: Binding.RestoreNone
+    }
+
+    Binding {
+        target: root
+        property: "levelIcon"
+        value: OsdService.icon
+        when: OsdService.showsLevel
+        restoreMode: Binding.RestoreNone
+    }
+
+    function commitDisplayedContent() {
+        root.displayedIsLevel = OsdService.showsLevel;
+        root.displayedText = OsdService.messageText;
+        root.displayedIcon = OsdService.icon;
+    }
+
+    Component.onCompleted: root.commitDisplayedContent()
+
+    onContentChangePendingChanged: {
+        if (!root.contentChangePending)
+            return;
+        if (!root.visible) {
+            contentSwap.stop();
+            root.contentOpacity = 1;
+            Qt.callLater(root.commitDisplayedContent);
+        } else if (!contentSwap.running) {
+            contentSwap.restart();
+        }
+    }
+
+    SequentialAnimation {
+        id: contentSwap
+
+        Anim {
+            target: root
+            property: "contentOpacity"
+            to: 0
+            duration: Tokens.animDuration.effectsFast
+            easing.type: Easing.InCubic
+        }
+        ScriptAction {
+            script: root.commitDisplayedContent()
+        }
+        Anim {
+            target: root
+            property: "contentOpacity"
+            to: 1
+            duration: Tokens.animDuration.effects
+        }
+    }
+
     Slider {
         id: slider
 
-        anchors.centerIn: parent
+        x: (root.width - width) / 2
+        y: (root.height - height) / 2
         value: root.levelValue
         icon: root.levelIcon
-        interactive: OsdService.active && root.shownIsLevel
-        opacity: root.shownIsLevel ? root.contentOpacity : 0
+        interactive: OsdService.showing && root.displayedIsLevel
+        opacity: root.displayedIsLevel ? root.contentOpacity : 0
         visible: opacity > 0
 
-        onMoved: value => OsdService.set(value)
-        onStepped: direction => OsdService.step(direction)
-        onPressedChanged: OsdService.hold(slider.pressed)
+        onValueRequested: value => OsdService.setLevel(value)
+        onStepRequested: direction => OsdService.stepLevel(direction)
+        onPressedChanged: OsdService.setSliderPressed(slider.pressed)
     }
 
     Row {
-        id: message
+        id: messageRow
 
-        anchors.centerIn: parent
+        x: (root.width - width) / 2
+        y: (root.height - height) / 2
         spacing: Tokens.spacing.xs
-        opacity: root.shownIsLevel ? 0 : root.contentOpacity
+        leftPadding: Tokens.spacing.sm
+        rightPadding: Tokens.spacing.sm + Tokens.spacing.xs
+        opacity: root.displayedIsLevel ? 0 : root.contentOpacity
         visible: opacity > 0
 
         StyledIcon {
@@ -127,14 +128,16 @@ Item {
 
             anchors.verticalCenter: parent.verticalCenter
             iconSize: Tokens.icon.md
-            text: root.shownIcon
+            text: root.displayedIcon
         }
 
         StyledText {
+            id: messageText
+
             anchors.verticalCenter: parent.verticalCenter
-            width: Math.min(implicitWidth, Tokens.osd.maxMessageWidth - messageIcon.width - message.spacing)
+            width: Math.min(implicitWidth, Tokens.osd.maxMessageWidth - messageIcon.width - messageRow.spacing - messageRow.leftPadding - messageRow.rightPadding)
             elideText: true
-            text: root.shownText
+            text: root.displayedText
             font.pixelSize: Tokens.fontSize.sm
             font.weight: Tokens.font.semibold
             color: Theme.color.m3onSurface

@@ -11,7 +11,6 @@ Singleton {
 
     readonly property bool available: root.device.ready && root.device.isLaptopBattery
     readonly property real percentage: root.device.percentage // 0..1
-    // Low: on battery power at 20% or less.
     readonly property bool low: root.available && UPower.onBattery && root.percentage <= 0.2
     readonly property bool charging: root.device.state === UPowerDeviceState.Charging || root.device.state === UPowerDeviceState.FullyCharged
 

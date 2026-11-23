@@ -9,11 +9,11 @@ import qs.components
 Item {
     id: root
 
-    implicitWidth: label.implicitWidth + Tokens.spacing.xs + bell.implicitWidth
-    implicitHeight: Math.max(label.implicitHeight, bell.implicitHeight)
+    implicitWidth: summaryLabel.implicitWidth + Tokens.spacing.xs + bell.implicitWidth
+    implicitHeight: Math.max(summaryLabel.implicitHeight, bell.implicitHeight)
 
     StyledText {
-        id: label
+        id: summaryLabel
 
         anchors {
             left: parent.left
@@ -24,8 +24,8 @@ Item {
 
         horizontalAlignment: Text.AlignRight
         elideText: true
-        animateText: true
-        text: NotificationService.summary
+        animateTextChange: true
+        text: NotificationService.summaryText
         font.pixelSize: Tokens.fontSize.sm
         color: Theme.color.m3onSurface
     }
@@ -36,7 +36,7 @@ Item {
 
         anchors.right: parent.right
         anchors.verticalCenter: parent.verticalCenter
-        buttonSize: Tokens.bar.iconButton
+        buttonSize: Tokens.bar.iconButtonSize
         iconSize: Tokens.icon.md
         icon: NotificationService.icon
     }

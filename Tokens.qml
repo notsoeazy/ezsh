@@ -15,7 +15,7 @@ Singleton {
     readonly property Osd osd: Osd {}
 
     component Fonts: QtObject {
-        readonly property string font: "Inter"
+        readonly property string family: "Inter"
         readonly property int thin: 300
         readonly property int light: 400
         readonly property int regular: 500
@@ -85,12 +85,18 @@ Singleton {
         readonly property int sliderWidth: 224
         readonly property int sliderHeight: 28
         readonly property int maxMessageWidth: 480
+        readonly property int startupDelay: 2000
     }
 
     component Bar: QtObject {
-        readonly property int iconButton: 26
-        readonly property int workspaceDot: 9
-        readonly property int workspaceActive: 22
+        readonly property int iconButtonSize: 26
+        readonly property int workspaceDotSize: 9
+        readonly property int activeWorkspaceWidth: 22
         readonly property int workspaceSpacing: 6
+        readonly property int horizontalPadding: 16
+        readonly property int verticalPadding: 8
+        readonly property int centerGap: 40
+        readonly property int collapsedHeight: iconButtonSize + verticalPadding * 2 // fix this in future to be responsive of content
+        readonly property int expandedHeight: 88 // fix this in future to be responsive to content
     }
 }

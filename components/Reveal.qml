@@ -1,38 +1,35 @@
 import QtQuick
 import qs
 
-// Shows/hides its content by growing/shrinking its width with a fade and scale,
-// so neighbours slide over instead of jumping. Gaps are part of the reveal, so
-// put spacing here rather than in the parent Row.
 Item {
     id: root
 
-    property bool shown: false
+    default property alias content: contentHolder.data
+
+    property bool revealed: false
     property real leadingGap: 0
     property real trailingGap: 0
-    default property alias content: holder.data
+    property real progress: root.revealed ? 1 : 0
 
-    property real amount: root.shown ? 1 : 0
+    implicitWidth: (root.leadingGap + contentHolder.width + root.trailingGap) * root.progress
+    implicitHeight: contentHolder.height
+    visible: root.progress > 0
 
-    Behavior on amount {
+    Item {
+        id: contentHolder
+
+        x: root.leadingGap * root.progress + (root.width - (root.leadingGap + root.trailingGap) * root.progress - width) / 2
+        width: childrenRect.width
+        height: childrenRect.height
+        anchors.verticalCenter: parent.verticalCenter
+        opacity: root.progress
+        scale: 0.6 + 0.4 * root.progress
+    }
+
+    Behavior on progress {
         Anim {
             duration: Tokens.animDuration.spatialFast
             easing.type: Easing.OutCubic
         }
-    }
-
-    implicitWidth: (root.leadingGap + holder.width + root.trailingGap) * root.amount
-    implicitHeight: holder.height
-    visible: root.amount > 0
-
-    Item {
-        id: holder
-
-        width: childrenRect.width
-        height: childrenRect.height
-        anchors.verticalCenter: parent.verticalCenter
-        x: root.leadingGap * root.amount + (root.width - (root.leadingGap + root.trailingGap) * root.amount - width) / 2
-        opacity: root.amount
-        scale: 0.6 + 0.4 * root.amount
     }
 }

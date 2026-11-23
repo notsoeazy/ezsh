@@ -17,21 +17,21 @@ Item {
 
     // This bar's own monitor, so each screen shows its own workspace, page and special.
     readonly property var monitor: HyprlandService.monitorFor(QsWindow.window?.screen)
-    readonly property int activeWorkspace: root.monitor?.activeWorkspace?.id ?? 1
-    readonly property int pageStart: HyprlandService.pageStart(root.activeWorkspace)
-    readonly property string activeSpecial: HyprlandService.specialOn(root.monitor?.name ?? "")
+    readonly property int activeWorkspaceId: root.monitor?.activeWorkspace?.id ?? 1
+    readonly property int pageOffset: HyprlandService.pageOffsetOf(root.activeWorkspaceId)
+    readonly property string activeSpecialName: HyprlandService.specialNameOn(root.monitor?.name ?? "")
 
-    readonly property bool special: root.activeSpecial !== ""
+    readonly property bool showingSpecial: root.activeSpecialName !== ""
     // Kept while the special content fades out, so its text doesn't vanish first.
-    property string specialName: ""
-    // The page being drawn; trails pageStart while the slide plays.
-    property int shownPageStart: 0
+    property string lastSpecialName: ""
+    // The page being drawn; trails pageOffset while the slide plays.
+    property int displayedPageOffset: 0
 
-    readonly property real dotsWidth: HyprlandService.pageSize * Tokens.bar.workspaceDot + (HyprlandService.pageSize - 1) * Tokens.bar.workspaceSpacing + Tokens.bar.workspaceActive - Tokens.bar.workspaceDot
+    readonly property real regularWidth: HyprlandService.workspacesPerPage * Tokens.bar.workspaceDotSize + (HyprlandService.workspacesPerPage - 1) * Tokens.bar.workspaceSpacing + Tokens.bar.activeWorkspaceWidth - Tokens.bar.workspaceDotSize
     readonly property real specialWidth: Tokens.spacing.xs + specialContent.implicitWidth + Tokens.spacing.sm
 
-    implicitWidth: root.special ? root.specialWidth : root.dotsWidth
-    implicitHeight: Tokens.bar.iconButton
+    implicitWidth: root.showingSpecial ? root.specialWidth : root.regularWidth
+    implicitHeight: Tokens.bar.iconButtonSize
 
     Behavior on implicitWidth {
         Anim {
@@ -40,39 +40,39 @@ Item {
         }
     }
 
-    function syncSpecialName() {
-        if (root.activeSpecial)
-            root.specialName = root.activeSpecial;
+    function rememberSpecialName() {
+        if (root.activeSpecialName)
+            root.lastSpecialName = root.activeSpecialName;
     }
 
     Component.onCompleted: {
-        root.shownPageStart = root.pageStart;
-        root.syncSpecialName();
+        root.displayedPageOffset = root.pageOffset;
+        root.rememberSpecialName();
     }
 
-    onActiveSpecialChanged: root.syncSpecialName()
+    onActiveSpecialNameChanged: root.rememberSpecialName()
 
-    onPageStartChanged: {
-        pageSlide.direction = root.pageStart > root.shownPageStart ? 1 : -1;
+    onPageOffsetChanged: {
+        pageSlide.direction = root.pageOffset > root.displayedPageOffset ? 1 : -1;
         pageSlide.restart();
     }
 
     StyledRectangle {
-        id: container
+        id: pill
 
         anchors.fill: parent
         radius: Tokens.radius.full
         // Fade alpha only, so the fill doesn't pass through black.
-        color: root.special ? Theme.color.m3primaryContainer : Qt.alpha(Theme.color.m3primaryContainer, 0)
+        color: root.showingSpecial ? Theme.color.m3primaryContainer : Qt.alpha(Theme.color.m3primaryContainer, 0)
         clip: true
 
         Row {
-            id: dots
+            id: dotRow
 
             anchors.verticalCenter: parent.verticalCenter
             spacing: Tokens.bar.workspaceSpacing
-            opacity: root.special ? 0 : 1
-            scale: root.special ? 0.8 : 1
+            opacity: root.showingSpecial ? 0 : 1
+            scale: root.showingSpecial ? 0.8 : 1
 
             Behavior on opacity {
                 Anim {
@@ -89,23 +89,23 @@ Item {
             }
 
             Repeater {
-                id: repeater
+                id: dotRepeater
 
-                model: HyprlandService.pageSize
+                model: HyprlandService.workspacesPerPage
 
                 delegate: StyledRectangle {
                     required property int index
-                    readonly property int wsId: root.shownPageStart + index + 1
-                    readonly property bool active: root.activeWorkspace === wsId
-                    readonly property bool occupied: HyprlandService.isOccupied(wsId)
+                    readonly property int workspaceId: root.displayedPageOffset + index + 1
+                    readonly property bool isActive: root.activeWorkspaceId === workspaceId
+                    readonly property bool isOccupied: HyprlandService.isWorkspaceOccupied(workspaceId)
 
                     anchors.verticalCenter: parent.verticalCenter
-                    implicitWidth: active ? Tokens.bar.workspaceActive : Tokens.bar.workspaceDot
-                    implicitHeight: Tokens.bar.workspaceDot
+                    implicitWidth: isActive ? Tokens.bar.activeWorkspaceWidth : Tokens.bar.workspaceDotSize
+                    implicitHeight: Tokens.bar.workspaceDotSize
                     radius: Tokens.radius.full
 
-                    color: active ? Theme.color.m3primary
-                        : occupied ? Theme.color.m3onSurfaceVariant
+                    color: isActive ? Theme.color.m3primary
+                        : isOccupied ? Theme.color.m3onSurfaceVariant
                         : Theme.color.m3surfaceVariant
 
                     Behavior on implicitWidth {
@@ -121,8 +121,8 @@ Item {
             anchors.verticalCenter: parent.verticalCenter
             x: Tokens.spacing.xs
             spacing: Tokens.spacing.xxs
-            opacity: root.special ? 1 : 0
-            scale: root.special ? 1 : 0.8
+            opacity: root.showingSpecial ? 1 : 0
+            scale: root.showingSpecial ? 1 : 0.8
             visible: opacity > 0
 
             Behavior on opacity {
@@ -142,14 +142,14 @@ Item {
             StyledIcon {
                 anchors.verticalCenter: parent.verticalCenter
                 iconSize: Tokens.icon.sm
-                fill: 1
-                text: Config.bar.specialIcons[root.specialName] ?? "layers"
+                fillAmount: 1
+                text: Config.bar.specialIcons[root.lastSpecialName] ?? "layers"
                 color: Theme.color.m3onPrimaryContainer
             }
 
             StyledText {
                 anchors.verticalCenter: parent.verticalCenter
-                text: root.specialName
+                text: root.lastSpecialName
                 font.pixelSize: Tokens.fontSize.xs
                 font.weight: Tokens.font.semibold
                 color: Theme.color.m3onPrimaryContainer
@@ -164,7 +164,7 @@ Item {
         property int direction: 1
 
         Anim {
-            target: dots
+            target: dotRow
             property: "x"
             to: -pageSlide.direction * root.width
             duration: Tokens.animDuration.effectsFast
@@ -172,12 +172,12 @@ Item {
         }
         ScriptAction {
             script: {
-                root.shownPageStart = root.pageStart;
-                dots.x = pageSlide.direction * root.width;
+                root.displayedPageOffset = root.pageOffset;
+                dotRow.x = pageSlide.direction * root.width;
             }
         }
         Anim {
-            target: dots
+            target: dotRow
             property: "x"
             to: 0
             duration: Tokens.animDuration.spatialFast
@@ -186,42 +186,42 @@ Item {
     }
 
     MouseArea {
-        id: mouse
+        id: mouseArea
 
         // Accumulated wheel delta so touchpads step once per notch, not per event.
-        property real wheel: 0
+        property real wheelDelta: 0
 
         anchors.fill: parent
         cursorShape: Qt.PointingHandCursor
 
         onClicked: event => {
-            if (root.special) {
-                HyprlandService.toggleSpecial(root.specialName);
+            if (root.showingSpecial) {
+                HyprlandService.toggleSpecialWorkspace(root.lastSpecialName);
                 return;
             }
             // The dot whose center is closest to the click.
-            let best = 0;
-            let bestDist = Infinity;
-            for (let i = 0; i < repeater.count; i++) {
-                const dot = repeater.itemAt(i);
-                const dist = Math.abs(event.x - (dots.x + dot.x + dot.width / 2));
-                if (dist < bestDist) {
-                    best = i;
-                    bestDist = dist;
+            let closestDotIndex = 0;
+            let closestDistance = Infinity;
+            for (let i = 0; i < dotRepeater.count; i++) {
+                const dot = dotRepeater.itemAt(i);
+                const dist = Math.abs(event.x - (dotRow.x + dot.x + dot.width / 2));
+                if (dist < closestDistance) {
+                    closestDotIndex = i;
+                    closestDistance = dist;
                 }
             }
-            const id = root.shownPageStart + best + 1;
-            if (id !== root.activeWorkspace)
-                HyprlandService.switchTo(id);
+            const id = root.displayedPageOffset + closestDotIndex + 1;
+            if (id !== root.activeWorkspaceId)
+                HyprlandService.switchToWorkspace(id);
         }
 
         onWheel: event => {
-            mouse.wheel += event.angleDelta.y;
-            if (Math.abs(mouse.wheel) < 120)
+            mouseArea.wheelDelta += event.angleDelta.y;
+            if (Math.abs(mouseArea.wheelDelta) < 120)
                 return;
             // Wheel up goes back, like SUPER + mouse_up in the Hyprland binds.
-            HyprlandService.switchTo(root.activeWorkspace + (mouse.wheel > 0 ? -1 : 1));
-            mouse.wheel = 0;
+            HyprlandService.switchToWorkspace(root.activeWorkspaceId + (mouseArea.wheelDelta > 0 ? -1 : 1));
+            mouseArea.wheelDelta = 0;
         }
     }
 }

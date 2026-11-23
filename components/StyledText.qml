@@ -5,18 +5,17 @@ import qs.themes
 Text {
     id: root
 
-    property bool animateText: false
+    property bool animateTextChange: false
     property bool wrapText: false
     property bool elideText: false
-    // Off when the owner animates size itself (e.g. scale), since pixel sizes step in whole pixels.
-    property bool animateSize: true
+    property bool animateFontSize: true
 
     renderType: Text.NativeRendering
     textFormat: Text.PlainText
 
     font.pixelSize: Tokens.fontSize.md
     font.weight: Tokens.font.regular
-    font.family: Tokens.font.font
+    font.family: Tokens.font.family
 
     color: Theme.color.m3onBackground
 
@@ -24,9 +23,8 @@ Text {
     wrapMode: wrapText ? Text.Wrap : Text.NoWrap
     maximumLineCount: wrapText ? 0 : 1
 
-    // No overshoot: a bouncing size shifts layouts that depend on this text's height.
     Behavior on font.pixelSize {
-        enabled: root.animateSize
+        enabled: root.animateFontSize
 
         Anim {
             easing.type: Easing.OutCubic
@@ -38,9 +36,8 @@ Text {
     }
 
     Behavior on text {
-        enabled: root.animateText
+        enabled: root.animateTextChange
 
-        // Shrink + fade out, swap, then pop back in.
         SequentialAnimation {
             Anim {
                 target: root

@@ -5,7 +5,7 @@ import qs.themes
 StyledText {
     id: root
 
-    property real fill: 0
+    property real fillAmount: 0
     property int iconSize: Tokens.icon.md
     property int symbolWeight: 400
     property int grade: 0
@@ -23,7 +23,7 @@ StyledText {
     color: Theme.color.m3onSurface
 
     font.variableAxes: ({
-        "FILL": root.fill,
+        "FILL": root.fillAmount,
         "wght": root.symbolWeight,
         "GRAD": root.grade,
         "opsz": Math.max(20, Math.min(48, root.iconSize))

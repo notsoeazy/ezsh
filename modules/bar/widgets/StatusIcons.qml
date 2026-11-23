@@ -14,7 +14,7 @@ Row {
 
     Reveal {
         anchors.verticalCenter: parent.verticalCenter
-        shown: root.showNotificationCount && NotificationService.count > 0
+        revealed: root.showNotificationCount && NotificationService.count > 0
         trailingGap: Tokens.spacing.xxs
 
         StyledRectangle {
@@ -37,47 +37,47 @@ Row {
 
     Reveal {
         anchors.verticalCenter: parent.verticalCenter
-        shown: NotificationService.doNotDisturb
+        revealed: NotificationService.doNotDisturb
 
         IconButton {
-            buttonSize: Tokens.bar.iconButton
+            buttonSize: Tokens.bar.iconButtonSize
             iconSize: Tokens.icon.md
-            selected: true // filled glyphs, per design
+            filled: true
             icon: "notifications_off"
         }
     }
 
     IconButton {
-        buttonSize: Tokens.bar.iconButton
+        buttonSize: Tokens.bar.iconButtonSize
         iconSize: Tokens.icon.md
-        selected: true // filled glyphs, per design
+        filled: true
         icon: AudioService.micIcon
         iconColor: AudioService.micInUse && AudioService.micMuted ? Theme.color.m3tertiary : Theme.color.m3onSurface
-        onActivated: AudioService.toggleMicMute()
+        onClicked: AudioService.toggleMicMute()
     }
 
     IconButton {
-        buttonSize: Tokens.bar.iconButton
+        buttonSize: Tokens.bar.iconButtonSize
         iconSize: Tokens.icon.md
-        selected: true // filled glyphs, per design
+        filled: true
         icon: AudioService.volumeIcon
-        iconColor: AudioService.muted ? Theme.color.m3outline : Theme.color.m3onSurface
-        onActivated: AudioService.toggleMute()
+        iconColor: AudioService.outputMuted ? Theme.color.m3outline : Theme.color.m3onSurface
+        onClicked: AudioService.toggleOutputMute()
     }
 
     IconButton {
-        buttonSize: Tokens.bar.iconButton
+        buttonSize: Tokens.bar.iconButtonSize
         iconSize: Tokens.icon.md
-        selected: true // filled glyphs, per design
+        filled: true
         icon: NetworkService.icon
-        iconColor: NetworkService.connected ? Theme.color.m3onSurface : Theme.color.m3outline
+        iconColor: NetworkService.online ? Theme.color.m3onSurface : Theme.color.m3outline
     }
 
     IconButton {
         visible: BatteryService.available
-        buttonSize: Tokens.bar.iconButton
+        buttonSize: Tokens.bar.iconButtonSize
         iconSize: Tokens.icon.md
-        selected: true // filled glyphs, per design
+        filled: true
         icon: BatteryService.icon
         iconColor: BatteryService.low ? Theme.color.m3error : Theme.color.m3onSurface
     }

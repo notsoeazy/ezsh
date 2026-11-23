@@ -12,12 +12,12 @@ Singleton {
     property bool doNotDisturb: false
 
     readonly property int count: server.trackedNotifications.values.length
-    readonly property string summary: root.count === 0 ? "All caught up" : root.count === 1 ? "1 notification" : `${root.count} notifications`
+    readonly property string summaryText: root.count === 0 ? "All caught up" : root.count === 1 ? "1 notification" : `${root.count} notifications`
     readonly property string icon: root.count === 0 ? "notifications" : "notifications_unread"
 
     NotificationServer {
         id: server
 
-        onNotification: n => n.tracked = true
+        onNotification: notification => notification.tracked = true
     }
 }

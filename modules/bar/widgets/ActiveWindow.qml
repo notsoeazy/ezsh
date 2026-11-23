@@ -11,11 +11,11 @@ import qs.components
 Item {
     id: root
 
-    readonly property var entry: HyprlandService.appId ? DesktopEntries.heuristicLookup(HyprlandService.appId) : null
-    readonly property string iconPath: root.entry?.icon ? Quickshell.iconPath(root.entry.icon, true) : ""
+    readonly property var desktopEntry: HyprlandService.activeAppId ? DesktopEntries.heuristicLookup(HyprlandService.activeAppId) : null
+    readonly property string iconPath: root.desktopEntry?.icon ? Quickshell.iconPath(root.desktopEntry.icon, true) : ""
 
-    implicitWidth: Tokens.icon.md + Tokens.spacing.xs + label.implicitWidth
-    implicitHeight: Math.max(Tokens.icon.md, label.implicitHeight)
+    implicitWidth: Tokens.icon.md + Tokens.spacing.xs + nameLabel.implicitWidth
+    implicitHeight: Math.max(Tokens.icon.md, nameLabel.implicitHeight)
 
     IconImage {
         id: appIcon
@@ -29,14 +29,14 @@ Item {
     StyledIcon {
         anchors.centerIn: appIcon
         iconSize: Tokens.icon.md
-        fill: 1
+        fillAmount: 1
         text: HyprlandService.activeWindow ? "web_asset" : "desktop_windows"
         color: Theme.color.m3onSurfaceVariant
         visible: !appIcon.visible
     }
 
     StyledText {
-        id: label
+        id: nameLabel
 
         anchors {
             left: parent.left
@@ -46,8 +46,8 @@ Item {
         }
 
         elideText: true
-        animateText: true
-        text: HyprlandService.activeWindow ? (root.entry?.name || HyprlandService.appId || "Desktop") : "Desktop"
+        animateTextChange: true
+        text: HyprlandService.activeWindow ? (root.desktopEntry?.name || HyprlandService.activeAppId || "Desktop") : "Desktop"
         font.pixelSize: Tokens.fontSize.sm
         color: Theme.color.m3onSurface
     }
