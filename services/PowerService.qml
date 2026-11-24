@@ -5,7 +5,7 @@ import Quickshell
 import Quickshell.Io
 import Quickshell.Services.UPower
 
-// Power profiles (power-profiles-daemon)
+// Power profiles (power-profiles-daemon) and the battery charge limit (UPower)
 Singleton {
     id: root
 
@@ -29,11 +29,13 @@ Singleton {
     readonly property int profile: PowerProfiles.profile
     readonly property var currentProfile: root.profiles.find(p => p.value === root.profile) ?? null
 
-    readonly property string conservationPath: "/sys/bus/platform/drivers/ideapad_acpi/VPC2004:00/conservation_mode"
+    readonly property var battery: UPower.devices.values.find(d => d.isLaptopBattery && d.isPresent) ?? null
+    readonly property string batteryPath: root.battery ? "/org/freedesktop/UPower/devices/battery_" + root.battery.nativePath.replace(/[^A-Za-z0-9_]/g, "_") : ""
 
     property bool conservationAvailable: false
-    property bool conservationWritable: false
     property bool conservationMode: false
+    property bool conservationBusy: false
+    property bool conservationError: false
 
     function setProfile(value) {
         if (!root.profiles.some(p => p.value === value))
@@ -41,52 +43,55 @@ Singleton {
         PowerProfiles.profile = value;
     }
 
-    function setConservationMode(enabled) {
-        if (!root.conservationAvailable || !root.conservationWritable)
-            return;
-        conservationFile.setText(enabled ? "1" : "0");
+    function busctl(verb, args) {
+        return ["busctl", "--system", verb, "org.freedesktop.UPower", root.batteryPath, "org.freedesktop.UPower.Device", ...args];
     }
 
-    // sysfs sends no change events: re-read when the value is about to be shown, and re-check
-    // write access (the udev rule or a chmod may have been applied since).
     function refreshConservation() {
-        if (!root.conservationAvailable)
+        if (!root.batteryPath) {
+            root.conservationAvailable = false;
             return;
-        conservationFile.reload();
-        writableCheck.running = true;
+        }
+        conservationRead.command = root.busctl("get-property", ["ChargeThresholdSupported", "ChargeThresholdEnabled"]);
+        conservationRead.running = true;
     }
 
-    FileView {
-        id: conservationFile
+    function setConservationMode(enabled) {
+        if (!root.conservationAvailable || root.conservationBusy)
+            return;
+        root.conservationBusy = true;
+        root.conservationError = false;
+        conservationWrite.command = root.busctl("call", ["EnableChargeThreshold", "b", enabled ? "true" : "false"]);
+        conservationWrite.running = true;
+    }
 
-        path: root.conservationPath
-        // sysfs attributes can't be replaced by a renamed temp file.
-        atomicWrites: false
-        // Absent on every machine but these Lenovos; that is not an error.
-        printErrors: false
+    onBatteryPathChanged: root.refreshConservation()
 
-        onLoaded: {
-            root.conservationMode = conservationFile.text().trim() === "1";
-            if (!root.conservationAvailable) {
-                root.conservationAvailable = true;
-                writableCheck.running = true;
+    Process {
+        id: conservationRead
+
+        stdout: StdioCollector {
+            onStreamFinished: {
+                const values = text.trim().split("\n");
+                root.conservationAvailable = values[0] === "b true";
+                root.conservationMode = values[1] === "b true";
             }
         }
-        onLoadFailed: root.conservationAvailable = false
-        // A reload() from here is ignored, so take the state from what was written: the kernel
-        // rejects a bad write, so a successful one is the new value.
-        onSaved: root.conservationMode = conservationFile.text().trim() === "1"
-        onSaveFailed: {
-            console.warn("ConservationMode: could not write", root.conservationPath, "(install scripts/99-ezsh-conservation-mode.rules)");
-            root.conservationWritable = false;
-            conservationFile.reload();
+        onExited: code => {
+            if (code !== 0)
+                root.conservationAvailable = false;
         }
     }
 
     Process {
-        id: writableCheck
+        id: conservationWrite
 
-        command: ["test", "-w", root.conservationPath]
-        onExited: code => root.conservationWritable = code === 0
+        onExited: code => {
+            if (code !== 0)
+                console.warn("PowerService: EnableChargeThreshold failed with code", code);
+            root.conservationError = code !== 0;
+            root.conservationBusy = false;
+            root.refreshConservation();
+        }
     }
 }

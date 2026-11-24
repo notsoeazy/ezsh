@@ -59,7 +59,7 @@ Singleton {
         "conservationMode": {
             enabled: () => Config.osd.showConservationMode,
             icon: () => "battery_saver",
-            text: payload => payload.enabled ? "Conservation mode on" : "Conservation mode off"
+            text: payload => payload.enabled ? "Battery charge limit on" : "Battery charge limit off"
         },
         "keepAwake": {
             enabled: () => Config.osd.showKeepAwake,

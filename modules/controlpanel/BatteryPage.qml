@@ -5,7 +5,7 @@ import qs.themes
 import qs.services
 import qs.components
 
-// The power mode and (on Lenovo IdeaPad) conservation mode.
+// Power profile and battery charge limit.
 PanelPage {
     id: root
 
@@ -14,7 +14,7 @@ PanelPage {
 
     title: "Battery"
 
-    // sysfs sends no change events; read the current value whenever the page is shown.
+    // Changes made outside ezsh show up the next time the page opens.
     onShownChanged: {
         if (root.shown)
             PowerService.refreshConservation();
@@ -68,7 +68,7 @@ PanelPage {
         visible: PowerService.conservationAvailable
 
         Accessible.role: Accessible.CheckBox
-        Accessible.name: "Conservation mode"
+        Accessible.name: "Battery charge limit"
         Accessible.checked: PowerService.conservationMode
 
         StyledRectangle {
@@ -77,8 +77,8 @@ PanelPage {
             color: Theme.color.m3surfaceContainerHigh
 
             StateLayer {
-                hovered: conservationArea.containsMouse && PowerService.conservationWritable
-                pressed: conservationArea.pressed && PowerService.conservationWritable
+                hovered: conservationArea.containsMouse && !PowerService.conservationBusy
+                pressed: conservationArea.pressed && !PowerService.conservationBusy
             }
         }
 
@@ -87,7 +87,7 @@ PanelPage {
 
             anchors.fill: parent
             hoverEnabled: true
-            cursorShape: PowerService.conservationWritable ? Qt.PointingHandCursor : Qt.ArrowCursor
+            cursorShape: PowerService.conservationBusy ? Qt.ArrowCursor : Qt.PointingHandCursor
             onClicked: PowerService.setConservationMode(!PowerService.conservationMode)
         }
 
@@ -114,7 +114,7 @@ PanelPage {
                 width: parent.width
                 elideText: true
                 animateFontSize: false
-                text: "Conservation mode"
+                text: "Battery charge limit"
                 font.pixelSize: Tokens.fontSize.sm
                 color: Theme.color.m3onSurface
             }
@@ -123,9 +123,9 @@ PanelPage {
                 width: parent.width
                 elideText: true
                 animateFontSize: false
-                text: PowerService.conservationWritable ? "Stops charging early to extend battery life" : "Needs write access: see scripts/99-ezsh-conservation-mode.rules"
+                text: PowerService.conservationError ? "Could not change charge limit" : "Stops charging early to extend battery life"
                 font.pixelSize: Tokens.fontSize.xs
-                color: PowerService.conservationWritable ? Theme.color.m3onSurfaceVariant : Theme.color.m3error
+                color: PowerService.conservationError ? Theme.color.m3error : Theme.color.m3onSurfaceVariant
             }
         }
 
@@ -136,8 +136,8 @@ PanelPage {
             anchors.rightMargin: Tokens.spacing.md
             anchors.verticalCenter: parent.verticalCenter
             checked: PowerService.conservationMode
-            enabled: PowerService.conservationWritable
-            Accessible.name: "Conservation mode"
+            enabled: !PowerService.conservationBusy
+            Accessible.name: "Battery charge limit"
             onToggled: PowerService.setConservationMode(!PowerService.conservationMode)
         }
     }
