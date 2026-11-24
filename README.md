@@ -1,4 +1,4 @@
-# logs
+# ezsh
 
 A Shell for my Arch + Hyprland setup.
 
@@ -16,19 +16,20 @@ A Shell for my Arch + Hyprland setup.
 10. Control Panel
 11. Configurations
 12. Settings
-
+13. Hyprland Config
 
 ## Tasks Completed
 November 22, 2026
-- [/] Border
-- [/] Exclusion Zone
-- [/] Bar Default/Expanded
-- [/] OSD Slider/Messages
-- [/] Services
+- [x] Border
+- [x] Exclusion Zone
+- [x] Bar Default/Expanded
+- [x] OSD Slider/Messages
+- [x] Services
 
 November 23, 2026
-- [/] App Launcher (apps, >commands, clipboard, symbols)
-- [/] Wallpaper Selector
+- [x] App Launcher (apps, >commands, clipboard, symbols)
+- [x] Wallpaper Selector
 
 November 24, 2026
-- [/] Control Panel
+- [x] Control Panel
+- [x] Expanded bar 2nd row - media player, compact notifications, and system tray
