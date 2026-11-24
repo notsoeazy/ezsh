@@ -187,13 +187,11 @@ Item {
         }
     }
 
-    MouseArea {
+    WheelArea {
         id: mouseArea
 
-        // Accumulated wheel delta so touchpads step once per notch, not per event.
-        property real wheelDelta: 0
-
         anchors.fill: parent
+        acceptedButtons: Qt.LeftButton
         cursorShape: Qt.PointingHandCursor
 
         onClicked: event => {
@@ -217,13 +215,7 @@ Item {
                 HyprlandService.switchToWorkspace(id);
         }
 
-        onWheel: event => {
-            mouseArea.wheelDelta += event.angleDelta.y;
-            if (Math.abs(mouseArea.wheelDelta) < 120)
-                return;
-            // Wheel up goes back, like SUPER + mouse_up in the Hyprland binds.
-            HyprlandService.switchToWorkspace(root.activeWorkspaceId + (mouseArea.wheelDelta > 0 ? -1 : 1));
-            mouseArea.wheelDelta = 0;
-        }
+        // Wheel up goes back, like SUPER + mouse_up in the Hyprland binds.
+        onStepped: direction => HyprlandService.switchToWorkspace(root.activeWorkspaceId - direction)
     }
 }

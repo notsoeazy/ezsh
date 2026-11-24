@@ -1,14 +1,14 @@
+import QtQuick
+import QtQuick.Shapes
 import Quickshell
 import Quickshell.Wayland
 import Quickshell.Hyprland
-import QtQuick
-import QtQuick.Shapes
 
 import qs
 import qs.config
 import qs.themes
-import qs.components
 import qs.services
+import qs.components
 import qs.modules
 
 Scope {
@@ -18,8 +18,6 @@ Scope {
 
     readonly property int collapsedHeight: Tokens.bar.collapsedHeight
 
-    readonly property int expandedWidth: Config.bar.expandedWidth
-    readonly property int expandedHeight: Tokens.bar.expandedHeight
 
     readonly property int cornerRadius: Config.bar.cornerRadius
 
@@ -89,7 +87,8 @@ Scope {
 
                 readonly property real restingTopMargin: window.borderThickness + (Config.bar.floating ? Config.bar.floatingGap : 0)
                 readonly property bool isFloating: Config.bar.floating
-                readonly property bool expanded: barBody.hovered && barHost.displayedView === "bar" && !window.fullscreen
+                // A tray menu sits outside the body, so it keeps the bar open while the pointer is on it.
+                readonly property bool expanded: (barBody.hovered || barHost.popupOpen) && barHost.displayedView === "bar" && !window.fullscreen
 
                 property bool hovered: false
                 property bool hoverBlocked: false
@@ -139,7 +138,7 @@ Scope {
                         return barHost.osdWidth + root.osdPadding * 2
                     case "bar":
                         return barHost.barContentWidth
-                            + (Math.max(root.expandedWidth, barHost.barContentWidth) - barHost.barContentWidth) * progress
+                            + (Math.max(barHost.barExpandedWidth, barHost.barContentWidth) - barHost.barContentWidth) * progress
                     default:
                         return barHost.viewWidth
                     }
@@ -150,7 +149,7 @@ Scope {
                         case "osd":
                             return barHost.osdHeight + root.osdPadding * 2
                         case "bar":
-                            return root.collapsedHeight + (root.expandedHeight - root.collapsedHeight) * progress
+                            return root.collapsedHeight + (barHost.barExpandedHeight - root.collapsedHeight) * progress
                         default:
                             return barHost.viewHeight
                     }

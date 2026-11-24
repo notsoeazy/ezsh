@@ -1,10 +1,9 @@
 import QtQuick
-import QtQuick.Effects
 import Quickshell
 import Quickshell.Io
 
 import qs
-import qs.themes
+import qs.components
 
 // The distro's LOGO= icon from /etc/os-release, tinted to the theme.
 Item {
@@ -26,22 +25,13 @@ Item {
         blockLoading: true
     }
 
-    Image {
+    TintedIcon {
         id: logo
 
         anchors.fill: parent
+        size: Tokens.icon.md
         source: root.logoIconName ? Quickshell.iconPath(root.logoIconName, true) : ""
-        sourceSize: Qt.size(Tokens.icon.md * Screen.devicePixelRatio, Tokens.icon.md * Screen.devicePixelRatio)
-        fillMode: Image.PreserveAspectFit
-        asynchronous: true
-        visible: false
-    }
-
-    MultiEffect {
-        anchors.fill: logo
-        source: logo
-        colorization: 1
-        colorizationColor: Theme.color.m3onSurface
+        fallback: ""
     }
 
     MouseArea {

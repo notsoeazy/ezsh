@@ -2,10 +2,10 @@ import QtQuick
 
 import qs
 import qs.themes
-import qs.components
 
-// A small title over a group of controls on a control panel page ("Output", "Power profile").
 StyledText {
+    id: root
+
     x: Tokens.spacing.md
     width: (parent?.width ?? 0) - 2 * Tokens.spacing.md
     elideText: true

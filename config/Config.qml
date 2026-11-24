@@ -18,6 +18,7 @@ Singleton {
     component Bar: QtObject {
         readonly property bool symmetricSides: true
         readonly property int expandedWidth: 520
+        readonly property int dashboardWidth: 640
         readonly property bool floating: false
         readonly property int floatingGap: 8
         readonly property int cornerRadius: 16
@@ -32,6 +33,7 @@ Singleton {
         readonly property int hoverEnterDelay: 60
         readonly property int hoverExitDelay: 200
         readonly property int borderGap: 10
+        readonly property string dashboardMode: "auto"
     }
     
     component Border: QtObject {

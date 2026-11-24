@@ -29,6 +29,8 @@ Item {
             session: sessionSlot
         })
     readonly property real barContentWidth: barView.contentWidth
+    readonly property real barExpandedWidth: barView.expandedWidth
+    readonly property real barExpandedHeight: barView.expandedHeight
     readonly property real osdWidth: osdView.implicitWidth
     readonly property real osdHeight: osdView.implicitHeight
 
@@ -38,7 +40,7 @@ Item {
     readonly property real viewHeight: root.displayedSlot?.item?.implicitHeight ?? 0
 
     // The displayed view has a Menu open that may hang outside the body.
-    readonly property bool popupOpen: root.displayedSlot?.item?.popupOpen === true
+    readonly property bool popupOpen: root.displayedView === "bar" ? barView.popupOpen : root.displayedSlot?.item?.popupOpen === true
     readonly property bool coversOsd:root.views[root.requestedView]?.item?.coversOsd === true
     // The expanded bar shows the states the OSD would announce (its own mute buttons trigger them).
     readonly property bool osdAllowed: !coversOsd && (requestedView === "bar" ? !root.barExpanded : Config.osd.showOverViews)
@@ -117,8 +119,8 @@ Item {
     }
 
     onRequestedViewChanged: {
-        if (requestedView !== "bar" && !(requestedView in views)) {
-            console.warn("BarHost: unknown view", requestedView)
+        if (root.requestedView !== "bar" && !(root.requestedView in root.views)) {
+            console.warn("BarHost: unknown view", root.requestedView)
             Qt.callLater(ViewService.close)
         }
     }

@@ -14,7 +14,6 @@ Singleton {
     readonly property Bar bar: Bar {}
     readonly property Launcher launcher: Launcher {}
     readonly property ControlPanel controlPanel: ControlPanel {}
-    readonly property IconThumbnail iconThumbnail: IconThumbnail {}
 
     component Fonts: QtObject {
         readonly property string family: "Inter"
@@ -82,10 +81,7 @@ Singleton {
         readonly property real pressed: 0.2
         readonly property real disabledContent: 0.38
         readonly property real disabledContainer: 0.12
-    }
-
-    component IconThumbnail: QtObject {
-        readonly property int size: 64
+        readonly property real placeholder: 0.12
     }
 
     component Launcher: QtObject {
@@ -105,5 +101,7 @@ Singleton {
         readonly property int centerGap: 40
         readonly property int collapsedHeight: iconButtonSize + verticalPadding * 2 // fix this in future to be responsive of content
         readonly property int expandedHeight: 88 // fix this in future to be responsive to content
+        // Where in the expand motion (0..1) the secondary rows and the dashboard start fading in.
+        readonly property real secondaryRevealStart: 0.4
     }
 }

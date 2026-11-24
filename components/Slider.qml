@@ -32,7 +32,7 @@ Item {
         radius: height / 2
         color: Theme.color.m3surfaceContainerHighest
 
-        Rectangle {
+        StyledRectangle {
             // Overshoot past either end is clipped by the pill.
             width: Math.max(0, root.displayedValue) * parent.width
             height: parent.height
@@ -52,16 +52,15 @@ Item {
         visible: root.icon !== ""
     }
 
-    MouseArea {
+    WheelArea {
         id: mouseArea
-
-        property real wheelDelta: 0
 
         function valueFromX(x) {
             return Math.max(0, Math.min(1, x / root.width));
         }
 
         anchors.fill: parent
+        acceptedButtons: Qt.LeftButton
         enabled: root.interactive
         cursorShape: Qt.PointingHandCursor
 
@@ -70,13 +69,7 @@ Item {
             if (mouseArea.pressed)
                 root.valueRequested(mouseArea.valueFromX(event.x));
         }
-        onWheel: event => {
-            mouseArea.wheelDelta += event.angleDelta.y;
-            if (Math.abs(mouseArea.wheelDelta) < 120)
-                return;
-            root.stepRequested(mouseArea.wheelDelta > 0 ? 1 : -1);
-            mouseArea.wheelDelta = 0;
-        }
+        onStepped: direction => root.stepRequested(direction)
     }
 
     Behavior on displayedValue {

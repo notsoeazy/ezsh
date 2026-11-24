@@ -9,15 +9,21 @@ Item {
     property string icon: ""
     property string text: ""
     property bool selected: false
+    // Compact rows for long menus (tray app menus).
+    property bool dense: false
+    // A chevron for an entry that opens a submenu.
+    property string trailingIcon: ""
 
     readonly property int itemHeight: 44
+    readonly property int denseItemHeight: 32
 
     signal clicked()
 
     width: parent?.width ?? implicitWidth
-    implicitWidth: content.implicitWidth + Tokens.spacing.md * 2
-    implicitHeight: root.itemHeight
-    activeFocusOnTab: true
+    implicitWidth: content.implicitWidth + Tokens.spacing.md * 2 + (trailing.visible ? trailing.width + Tokens.spacing.sm : 0)
+    implicitHeight: root.dense ? root.denseItemHeight : root.itemHeight
+    opacity: root.enabled ? 1 : Tokens.opacity.disabledContent
+    activeFocusOnTab: root.enabled
 
     Accessible.role: Accessible.MenuItem
     Accessible.name: root.text
@@ -33,7 +39,7 @@ Item {
 
     StyledRectangle {
         anchors.fill: parent
-        radius: Tokens.radius.lg
+        radius: root.dense ? Tokens.radius.md : Tokens.radius.lg
         color: root.selected ? Theme.color.m3tertiaryContainer : Qt.alpha(Theme.color.m3tertiaryContainer, 0)
         border.width: root.activeFocus ? 2 : 0
         border.color: Theme.color.m3secondary
@@ -55,7 +61,7 @@ Item {
             anchors.verticalCenter: parent.verticalCenter
             visible: root.icon !== ""
             text: root.icon
-            iconSize: Tokens.icon.md
+            iconSize: root.dense ? Tokens.icon.sm : Tokens.icon.md
             fillAmount: root.selected ? 1 : 0
             color: root.selected ? Theme.color.m3onTertiaryContainer : Theme.color.m3onSurface
         }
@@ -67,6 +73,18 @@ Item {
             font.pixelSize: Tokens.fontSize.sm
             color: root.selected ? Theme.color.m3onTertiaryContainer : Theme.color.m3onSurface
         }
+    }
+
+    StyledIcon {
+        id: trailing
+
+        anchors.right: parent.right
+        anchors.rightMargin: Tokens.spacing.sm
+        anchors.verticalCenter: parent.verticalCenter
+        visible: root.trailingIcon !== ""
+        text: root.trailingIcon
+        iconSize: root.dense ? Tokens.icon.sm : Tokens.icon.md
+        color: Theme.color.m3onSurfaceVariant
     }
 
     MouseArea {

@@ -10,6 +10,9 @@ import qs
 Singleton {
     id: root
 
+    readonly property int thumbnailSize: 64
+    readonly property int refreshDelayInterval: 2000
+
     property var thumbnails: ({})
     property bool ready: false
     property bool rerunQueued: false
@@ -34,7 +37,7 @@ Singleton {
             root.rerunQueued = true;
             return;
         }
-        generator.command = ["python3", "-I", Quickshell.shellPath("scripts/icon-thumbs.py"), String(Tokens.iconThumbnail.size), ...root.iconNames];
+        generator.command = ["python3", "-I", Quickshell.shellPath("scripts/icon-thumbs.py"), String(root.thumbnailSize), ...root.iconNames];
         generator.running = true;
     }
 
@@ -44,7 +47,7 @@ Singleton {
     Timer {
         id: refreshDelay
 
-        interval: 2000
+        interval: root.refreshDelayInterval
         onTriggered: root.refresh()
     }
 
