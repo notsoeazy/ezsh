@@ -29,6 +29,8 @@ Singleton {
     property string preview: ""
     property string saved: ""
     property bool stateRead: false
+    // A thumbnail run was asked for while one was busy; run again when it ends (new images since).
+    property bool thumbnailRerunQueued: false
 
     function fileUrl(path) {
         return "file://" + path.split("/").map(encodeURIComponent).join("/");
@@ -92,9 +94,12 @@ Singleton {
             scanner.running = true;
     }
 
+
     function makeThumbnails() {
-        if (thumbnailer.running)
+        if (thumbnailer.running) {
+            root.thumbnailRerunQueued = true;
             return;
+        }
         const center = Math.max(0, root.images.indexOf(root.showing));
         const order = root.images.map((path, index) => ({ path, distance: Math.abs(index - center) }))
             .sort((a, b) => a.distance - b.distance)
@@ -175,6 +180,10 @@ Singleton {
         onExited: code => {
             if (code !== 0)
                 console.warn("WallpaperService: making thumbnails failed", code);
+            if (root.thumbnailRerunQueued) {
+                root.thumbnailRerunQueued = false;
+                Qt.callLater(root.makeThumbnails);
+            }
         }
     }
 

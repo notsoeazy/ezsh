@@ -13,6 +13,7 @@ Singleton {
     readonly property Opacity opacity: Opacity {}
     readonly property Bar bar: Bar {}
     readonly property Launcher launcher: Launcher {}
+    readonly property ControlPanel controlPanel: ControlPanel {}
     readonly property IconThumbnail iconThumbnail: IconThumbnail {}
 
     component Fonts: QtObject {
@@ -89,6 +90,10 @@ Singleton {
 
     component Launcher: QtObject {
         readonly property int rowHeight: 50
+    }
+
+    component ControlPanel: QtObject {
+        readonly property int controlHeight: 44
     }
 
     component Bar: QtObject {

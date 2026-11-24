@@ -12,6 +12,8 @@ Row {
     // The notification count; the expanded bar shows its own summary instead.
     property bool showNotificationCount: true
 
+    signal navigateRequested(string view, string page)
+
     Reveal {
         anchors.verticalCenter: parent.verticalCenter
         revealed: root.showNotificationCount && NotificationService.count > 0
@@ -39,46 +41,54 @@ Row {
         anchors.verticalCenter: parent.verticalCenter
         revealed: NotificationService.doNotDisturb
 
-        IconButton {
-            buttonSize: Tokens.bar.iconButtonSize
+        Button {
+            type: "standard"
+            buttonHeight: Tokens.bar.iconButtonSize
             iconSize: Tokens.icon.md
-            filled: true
+            iconFilled: true
             icon: "notifications_off"
         }
     }
 
-    IconButton {
-        buttonSize: Tokens.bar.iconButtonSize
+    Button {
+        type: "standard"
+        buttonHeight: Tokens.bar.iconButtonSize
         iconSize: Tokens.icon.md
-        filled: true
+        iconFilled: true
         icon: AudioService.micIcon
-        iconColor: AudioService.micInUse && AudioService.micMuted ? Theme.color.m3tertiary : Theme.color.m3onSurface
+        contentColor: AudioService.micInUse && AudioService.micMuted ? Theme.color.m3tertiary : Theme.color.m3onSurface
         onClicked: AudioService.toggleMicMute()
+        onSecondaryClicked: root.navigateRequested("controlpanel", "audio")
     }
 
-    IconButton {
-        buttonSize: Tokens.bar.iconButtonSize
+    Button {
+        type: "standard"
+        buttonHeight: Tokens.bar.iconButtonSize
         iconSize: Tokens.icon.md
-        filled: true
+        iconFilled: true
         icon: AudioService.volumeIcon
-        iconColor: AudioService.outputMuted ? Theme.color.m3outline : Theme.color.m3onSurface
+        contentColor: AudioService.outputMuted ? Theme.color.m3outline : Theme.color.m3onSurface
         onClicked: AudioService.toggleOutputMute()
     }
 
-    IconButton {
-        buttonSize: Tokens.bar.iconButtonSize
+    Button {
+        type: "standard"
+        buttonHeight: Tokens.bar.iconButtonSize
         iconSize: Tokens.icon.md
-        filled: true
+        iconFilled: true
         icon: NetworkService.icon
-        iconColor: NetworkService.online ? Theme.color.m3onSurface : Theme.color.m3outline
+        contentColor: NetworkService.online ? Theme.color.m3onSurface : Theme.color.m3outline
+        onClicked: root.navigateRequested("controlpanel", "")
     }
 
-    IconButton {
+    Button {
+        type: "standard"
         visible: BatteryService.available
-        buttonSize: Tokens.bar.iconButtonSize
+        buttonHeight: Tokens.bar.iconButtonSize
         iconSize: Tokens.icon.md
-        filled: true
+        iconFilled: true
         icon: BatteryService.icon
-        iconColor: BatteryService.low ? Theme.color.m3error : Theme.color.m3onSurface
+        contentColor: BatteryService.low ? Theme.color.m3error : Theme.color.m3onSurface
+        onClicked: root.navigateRequested("controlpanel", "battery")
     }
 }

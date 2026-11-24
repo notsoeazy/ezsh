@@ -98,6 +98,15 @@ Singleton {
             Hyprland.dispatch(`togglespecialworkspace ${target}`);
     }
 
+    // Ends the Hyprland session (log out).
+    function exit() {
+        // shortcut: the Lua name hl.dsp.exit() is assumed from the dispatcher naming, verify on a Lua config.
+        if (root.usingLua)
+            Hyprland.dispatch("hl.dsp.exit()");
+        else
+            Hyprland.dispatch("exit");
+    }
+
     function recordSpecial(monitorName, name) {
         const special = name.startsWith("special:") ? name.slice(8) : "";
         // New object so bindings on `specialByMonitor` re-evaluate.

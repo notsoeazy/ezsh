@@ -8,12 +8,16 @@ import Quickshell.Services.Notifications
 Singleton {
     id: root
 
-    // shortcut: nothing sets this yet; wire it to a toggle once notification popups exist.
+    // shortcut: only the bar icon and OSD read this; popups must honor it once they exist.
     property bool doNotDisturb: false
 
     readonly property int count: server.trackedNotifications.values.length
     readonly property string summaryText: root.count === 0 ? "All caught up" : root.count === 1 ? "1 notification" : `${root.count} notifications`
     readonly property string icon: root.count === 0 ? "notifications" : "notifications_unread"
+
+    function toggleDoNotDisturb() {
+        root.doNotDisturb = !root.doNotDisturb;
+    }
 
     NotificationServer {
         id: server

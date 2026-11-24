@@ -162,7 +162,7 @@ def thumbnail(source: Path, size: int):
                 image.convert("RGBA").save(partial, "PNG")
                 partial.replace(target)  # atomic, so the shell never reads half a file
             return target
-    except OSError as error:
+    except Exception as error:  # incl. DecompressionBombError: one bad icon must not end the run
         print(f"icon-thumbs: {source}: {error}", file=sys.stderr)
         return None
 

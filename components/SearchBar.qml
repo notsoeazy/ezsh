@@ -7,6 +7,7 @@ FocusScope {
     id: root
 
     property alias text: input.text
+    property alias echoMode: input.echoMode
     property string placeholder: "Search"
     property string icon: "search"
 
@@ -19,6 +20,10 @@ FocusScope {
     signal backspaceOnEmpty()
 
     implicitHeight: root.barHeight
+
+    function selectAll() {
+        input.selectAll();
+    }
 
     Accessible.role: Accessible.EditableText
     Accessible.name: root.placeholder
@@ -97,11 +102,12 @@ FocusScope {
         anchors.verticalCenter: parent.verticalCenter
         revealed: input.text !== ""
 
-        IconButton {
-            buttonSize: root.clearButtonSize
+        Button {
+            type: "standard"
+            buttonHeight: root.clearButtonSize
             iconSize: Tokens.icon.lg
             icon: "close"
-            iconColor: Theme.color.m3onSurfaceVariant
+            contentColor: Theme.color.m3onSurfaceVariant
             activeFocusOnTab: false
             Accessible.name: "Clear search"
             onClicked: {

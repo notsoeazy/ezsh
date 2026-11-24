@@ -5,25 +5,15 @@ import QtQuick
 
 Singleton {
 
-    readonly property Border border: Border {}
     readonly property Bar bar: Bar {}
+    readonly property Border border: Border {}
     readonly property Osd osd: Osd {}
     readonly property Services services: Services {}
     readonly property Launcher launcher: Launcher {}
     readonly property Wallpaper wallpaper: Wallpaper {}
+    readonly property NightLight nightLight: NightLight {}
+    readonly property Session session: Session {}
 
-    component Wallpaper: QtObject {
-        readonly property bool enabled: true
-        readonly property string directory: "~/Pictures/Wallpapers"
-        // Ms to wait after a change before decoding the new wallpaper, so fast browsing skips images.
-        readonly property int previewDelay: 120
-    }
-
-    component Launcher: QtObject {
-        readonly property string commandPrefix: ">"
-        readonly property int maxSymbolResults: 100
-        readonly property int symbolIndexTimeout: 30000
-    }
 
     component Bar: QtObject {
         readonly property bool symmetricSides: true
@@ -43,6 +33,12 @@ Singleton {
         readonly property int hoverExitDelay: 200
         readonly property int borderGap: 10
     }
+    
+    component Border: QtObject {
+        readonly property int thickness: 10
+        readonly property int radius: 20
+        readonly property int gap: 0
+    }
 
     component Osd: QtObject {
         readonly property int startupDelay: 2000
@@ -54,6 +50,8 @@ Singleton {
         readonly property bool showDoNotDisturb: true
         readonly property bool showNightLight: true
         readonly property bool showKeepAwake: true
+        readonly property bool showPowerProfile: true
+        readonly property bool showConservationMode: true
         readonly property int levelTimeout: 1500
         readonly property int messageTimeout: 2500
         readonly property bool showOverViews: true
@@ -64,9 +62,26 @@ Singleton {
         readonly property int brightnessStepPercent: 5
     }
 
-    component Border: QtObject {
-        readonly property int thickness: 10
-        readonly property int radius: 20
-        readonly property int gap: 0
+    component Launcher: QtObject {
+        readonly property string commandPrefix: ">"
+        readonly property int maxSymbolResults: 100
+        readonly property int symbolIndexTimeout: 30000
+    }
+
+    component Wallpaper: QtObject {
+        readonly property bool enabled: true
+        readonly property string directory: "~/Pictures/Wallpapers"
+        // Ms to wait after a change before decoding the new wallpaper, so fast browsing skips images.
+        readonly property int previewDelay: 120
+    }
+
+    component NightLight: QtObject {
+        readonly property int temperature: 4300
+    }
+
+    component Session: QtObject {
+        readonly property var lock: ["loginctl", "lock-session"]
+        readonly property var reboot: ["systemctl", "reboot"]
+        readonly property var poweroff: ["systemctl", "poweroff"]
     }
 }

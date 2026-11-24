@@ -30,6 +30,16 @@ Singleton {
     }
 
     readonly property string micIcon: root.micMuted ? "mic_off" : "mic"
+    // 0..1
+    readonly property real micVolume: root.inputNode?.audio?.volume ?? 0
+
+    // Devices (not app streams), by name.
+    // shortcut: Quickshell types only exact "Audio/Source", so virtual mics ("Audio/Source/Virtual":
+    // EasyEffects, noise suppression) are left out and can't be made default; set them with wpctl if needed.
+    readonly property var outputDevices: Pipewire.nodes.values.filter(n => n.type === PwNodeType.AudioSink)
+        .sort((a, b) => root.deviceName(a).localeCompare(root.deviceName(b)))
+    readonly property var inputDevices: Pipewire.nodes.values.filter(n => n.type === PwNodeType.AudioSource)
+        .sort((a, b) => root.deviceName(a).localeCompare(root.deviceName(b)))
 
     // Apps currently recording (capture streams). Also counts sink-monitor capture, e.g. visualizers.
     readonly property var capturingStreams: Pipewire.nodes.values.filter(n => n.type === PwNodeType.AudioInStream)
@@ -57,6 +67,45 @@ Singleton {
     function toggleMicMute() {
         if (root.inputNode?.audio)
             root.inputNode.audio.muted = !root.inputNode.audio.muted;
+    }
+
+    // Level 0..1; adjusting the mic also unmutes it.
+    function setMicVolume(value) {
+        if (!root.inputReady || !isFinite(value))
+            return;
+        root.inputNode.audio.volume = Math.max(0, Math.min(Math.max(1, root.micVolume), value));
+        root.inputNode.audio.muted = false;
+    }
+
+    function stepMicVolume(direction) {
+        root.setMicVolume(root.micVolume + direction * Config.services.volumeStepPercent / 100);
+    }
+
+    // Pipewire moves streams that follow the default to the new device.
+    function setOutputDevice(node) {
+        if (node?.type === PwNodeType.AudioSink)
+            Pipewire.preferredDefaultAudioSink = node;
+    }
+
+    function setInputDevice(node) {
+        if (node?.type === PwNodeType.AudioSource)
+            Pipewire.preferredDefaultAudioSource = node;
+    }
+
+    function deviceName(node) {
+        return node?.description || node?.nickname || node?.name || "Unknown device";
+    }
+
+    // From the node name, which says the bus (bluez_output.…, alsa_output.…hdmi…).
+    function deviceIcon(node) {
+        const name = node?.name ?? "";
+        if (name.startsWith("bluez"))
+            return node.type === PwNodeType.AudioSink ? "headphones" : "headset_mic";
+        if (name.includes("hdmi") || name.includes("displayport"))
+            return "tv";
+        if (name.includes("usb"))
+            return node.type === PwNodeType.AudioSink ? "headphones" : "mic_external_on";
+        return node?.type === PwNodeType.AudioSink ? "speaker" : "mic";
     }
 
     // qs ipc call volume increase|decrease

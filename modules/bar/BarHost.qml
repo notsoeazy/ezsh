@@ -8,6 +8,8 @@ import qs.components
 import qs.modules.osd
 import qs.modules.launcher
 import qs.modules.wallpaper
+import qs.modules.controlpanel
+import qs.modules.session
 
 // Routes the bar body between its views: the bar itself, the OSD, and the views in `views`
 // (opened through ViewService). The OSD (from OsdService) shows over an open view, which stays
@@ -22,7 +24,9 @@ Item {
 
     readonly property var views: ({
             launcher: launcherSlot,
-            wallpaper: wallpaperSlot
+            wallpaper: wallpaperSlot,
+            controlpanel: controlPanelSlot,
+            session: sessionSlot
         })
     readonly property real barContentWidth: barView.contentWidth
     readonly property real osdWidth: osdView.implicitWidth
@@ -33,8 +37,16 @@ Item {
     readonly property real viewWidth: root.displayedSlot?.item?.implicitWidth ?? 0
     readonly property real viewHeight: root.displayedSlot?.item?.implicitHeight ?? 0
 
-    readonly property bool coversOsd: root.views[root.requestedView]?.item?.coversOsd === true
-    readonly property bool osdAllowed: !coversOsd && (requestedView === "bar" || Config.osd.showOverViews)
+    // The displayed view has a Menu open that may hang outside the body.
+    readonly property bool popupOpen: root.displayedSlot?.item?.popupOpen === true
+    readonly property bool coversOsd:root.views[root.requestedView]?.item?.coversOsd === true
+    // The expanded bar shows the states the OSD would announce (its own mute buttons trigger them).
+    readonly property bool osdAllowed: !coversOsd && (requestedView === "bar" ? !root.barExpanded : Config.osd.showOverViews)
+    // An announcement this monitor can't show now: a level is dropped (the slider or icon that
+    // changed it is the cue), a message is held with its timer paused and plays once it can.
+    readonly property bool osdBlocked: OsdService.showing && root.isFocusedMonitor && !root.osdAllowed
+    // Also re-checked when a level replaces a held message (osdBlocked stays true then).
+    readonly property bool osdLevelBlocked: root.osdBlocked && OsdService.showsLevel
     readonly property bool isFocusedMonitor: root.monitorName === HyprlandService.focusedMonitorName
 
     readonly property bool osdRequested: (OsdService.showing && root.isFocusedMonitor) || (root.fullscreen && root.displayedView === "osd" && !root.retracted)
@@ -89,11 +101,19 @@ Item {
         root.displayedView = root.targetView;
     }
 
-    function navigateTo(view) {
+    function applyOsdBlock() {
+        if (root.osdBlocked && OsdService.showsLevel)
+            OsdService.dismiss();
+        else
+            OsdService.setHeld(root.osdBlocked);
+    }
+
+    // page: optional, the view's page to open on.
+    function navigateTo(view, page) {
         if (view === "bar")
             ViewService.close()
         else
-            ViewService.open(view, "", root.monitorName)
+            ViewService.open(view, page ?? "", root.monitorName)
     }
 
     onRequestedViewChanged: {
@@ -101,6 +121,16 @@ Item {
             console.warn("BarHost: unknown view", requestedView)
             Qt.callLater(ViewService.close)
         }
+    }
+    onOsdLevelBlockedChanged: Qt.callLater(root.applyOsdBlock)
+    // A monitor going away while it holds a message would leave it paused, never hiding.
+    Component.onDestruction: {
+        if (root.osdBlocked)
+            OsdService.setHeld(false);
+    }
+    onOsdBlockedChanged: {
+        // Deferred: dismissing writes `showing`, which this binding reads (a binding loop that drops the write).
+        Qt.callLater(root.applyOsdBlock);
     }
     onTargetViewChanged: root.scheduleSwitch()
     onRetractedChanged: root.scheduleSwitch()
@@ -120,7 +150,7 @@ Item {
         opacity: root.displayedView === "bar" && !root.leaving ? 1 : 0
         visible: opacity > 0
 
-        onNavigateRequested: view => root.navigateTo(view)
+        onNavigateRequested: (view, page) => root.navigateTo(view, page)
 
         Behavior on opacity {
             Anim {
@@ -166,6 +196,31 @@ Item {
         name: "wallpaper"
 
         sourceComponent: WallpaperView {
+            onCloseRequested: ViewService.close()
+        }
+    }
+
+    ViewSlot {
+        id: controlPanelSlot
+
+        anchors.fill: parent
+        host: root
+        name: "controlpanel"
+
+        sourceComponent: ControlPanelView {
+            onCloseRequested: ViewService.close()
+            onNavigateRequested: view => root.navigateTo(view)
+        }
+    }
+
+    ViewSlot {
+        id: sessionSlot
+
+        anchors.fill: parent
+        host: root
+        name: "session"
+
+        sourceComponent: SessionView {
             onCloseRequested: ViewService.close()
         }
     }

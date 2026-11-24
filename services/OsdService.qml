@@ -51,6 +51,16 @@ Singleton {
             icon: () => "nightlight",
             text: payload => payload.enabled ? "Night light on" : "Night light off"
         },
+        "powerProfile": {
+            enabled: () => Config.osd.showPowerProfile,
+            icon: payload => payload.icon,
+            text: payload => payload.label
+        },
+        "conservationMode": {
+            enabled: () => Config.osd.showConservationMode,
+            icon: () => "battery_saver",
+            text: payload => payload.enabled ? "Conservation mode on" : "Conservation mode off"
+        },
         "keepAwake": {
             enabled: () => Config.osd.showKeepAwake,
             icon: () => "coffee",
@@ -63,6 +73,8 @@ Singleton {
     property string currentKind: ""
     property var payload: ({})
     property bool sliderPressed: false
+    // The focused bar can't show the OSD right now (a view covers it); a held message keeps its full time for when it can.
+    property bool held: false
 
     readonly property var currentDefinition: root.kindDefinitions[root.currentKind] ?? null
     readonly property bool showsLevel: root.currentDefinition?.isLevel === true
@@ -70,8 +82,7 @@ Singleton {
     readonly property string icon: !root.currentDefinition ? "" : root.showsLevel ? root.currentDefinition.icon() : root.currentDefinition.icon(root.payload)
     readonly property string messageText: root.currentDefinition && !root.showsLevel ? root.currentDefinition.text(root.payload) : ""
 
-    // Show a kind. Night light and keep awake have no service yet; theirs will call
-    // announce("nightLight", { enabled }) / announce("keepAwake", { enabled }).
+    // Show a kind.
     function announce(kind, payload) {
         const definition = root.kindDefinitions[kind];
         if (!definition) {
@@ -80,8 +91,9 @@ Singleton {
         }
         if (!root.startupDelayElapsed || !Config.osd.enabled || !definition.enabled())
             return;
-        root.currentKind = kind;
+        // Payload first: the kind's icon/text bindings read it as soon as currentKind changes.
         root.payload = payload ?? {};
+        root.currentKind = kind;
         root.showing = true;
         hideTimer.interval = definition.isLevel ? Config.osd.levelTimeout : Config.osd.messageTimeout;
         root.restartHideTimer();
@@ -110,11 +122,17 @@ Singleton {
     function dismiss() {
         hideTimer.stop();
         root.sliderPressed = false;
+        root.held = false;
         root.showing = false;
     }
 
+    function setHeld(held) {
+        root.held = held;
+        root.restartHideTimer();
+    }
+
     function restartHideTimer() {
-        if (root.showing && !root.sliderPressed)
+        if (root.showing && !root.sliderPressed && !root.held)
             hideTimer.restart();
         else
             hideTimer.stop();
@@ -172,6 +190,36 @@ Singleton {
 
         function onDoNotDisturbChanged() {
             root.announce("doNotDisturb", { enabled: NotificationService.doNotDisturb });
+        }
+    }
+
+    Connections {
+        target: NightLightService
+
+        function onEnabledChanged() {
+            root.announce("nightLight", { enabled: NightLightService.enabled });
+        }
+    }
+
+    Connections {
+        target: PowerService
+
+        // Not onProfileChanged: currentProfile may not have followed profile yet when that fires.
+        function onCurrentProfileChanged() {
+            if (PowerService.currentProfile)
+                root.announce("powerProfile", PowerService.currentProfile);
+        }
+
+        function onConservationModeChanged() {
+            root.announce("conservationMode", { enabled: PowerService.conservationMode });
+        }
+    }
+
+    Connections {
+        target: KeepAwakeService
+
+        function onEnabledChanged() {
+            root.announce("keepAwake", { enabled: KeepAwakeService.enabled });
         }
     }
 }

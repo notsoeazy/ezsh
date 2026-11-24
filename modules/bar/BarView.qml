@@ -21,7 +21,7 @@ Item {
     readonly property real leftWidth: Math.max(0, root.leftBase + (root.sidesWidth - root.leftBase - root.rightBase) / 2)
     readonly property real rightWidth: Math.max(0, root.rightBase + (root.sidesWidth - root.leftBase - root.rightBase) / 2)
 
-    signal navigateRequested(string view)
+    signal navigateRequested(string view, string page)
 
     BarGroup {
         id: left
@@ -39,7 +39,7 @@ Item {
 
             DistroLogo {
                 anchors.verticalCenter: parent.verticalCenter
-                onClicked: root.navigateRequested("launcher")
+                onClicked: root.navigateRequested("launcher", "")
             }
 
             Row {
@@ -99,7 +99,10 @@ Item {
         fixedRowHeight: Tokens.bar.iconButtonSize
         rowSpacing: Tokens.spacing.xs
 
-        primaryComponent: StatusIcons { showNotificationCount: !root.expanded }
+        primaryComponent: StatusIcons {
+            showNotificationCount: !root.expanded
+            onNavigateRequested: (view, page) => root.navigateRequested(view, page)
+        }
 
         secondaryComponent: NotificationSummary {}
     }

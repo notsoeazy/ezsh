@@ -60,7 +60,19 @@ Scope {
                 onCleared: ViewService.close()
             }
 
-            mask: Region { item: barBody.hideProgress < 1 ? contentLayer : null }
+            // One per screen; any of them keeps the session awake.
+            IdleInhibitor {
+                window: window
+                enabled: KeepAwakeService.enabled
+            }
+
+            mask: barHost.popupOpen ? null : bodyRegion
+
+            Region {
+                id: bodyRegion
+
+                item: barBody.hideProgress < 1 ? contentLayer : null
+            }
 
             Border {
                 anchors.fill: parent
@@ -77,7 +89,10 @@ Scope {
 
                 readonly property real restingTopMargin: window.borderThickness + (Config.bar.floating ? Config.bar.floatingGap : 0)
                 readonly property bool isFloating: Config.bar.floating
-                readonly property bool expanded: hoverHandler.hovered && barHost.displayedView === "bar" && !window.fullscreen
+                readonly property bool expanded: barBody.hovered && barHost.displayedView === "bar" && !window.fullscreen
+
+                property bool hovered: false
+                property bool hoverBlocked: false
 
                 property real hideProgress: window.fullscreen && !barHost.showsOsd && !window.viewOpen ? 1 : 0
                 property real progress: expanded ? 1 : 0
@@ -97,6 +112,10 @@ Scope {
                     target: barHost
 
                     function onViewChangeStarting(animate) {
+                        enterTimer.stop()
+                        exitTimer.stop()
+                        barBody.hovered = false
+                        barBody.hoverBlocked = hoverHandler.hovered
                         resizeAnim.stop()
                         barBody.previousWidth = barBody.bodyWidth
                         barBody.previousHeight = barBody.bodyHeight
@@ -216,6 +235,32 @@ Scope {
 
                 HoverHandler {
                     id: hoverHandler
+
+                    onHoveredChanged: {
+                        if (hovered) {
+                            exitTimer.stop()
+                            if (!barBody.hoverBlocked)
+                                enterTimer.restart()
+                        } else {
+                            enterTimer.stop()
+                            barBody.hoverBlocked = false
+                            exitTimer.restart()
+                        }
+                    }
+                }
+
+                Timer {
+                    id: enterTimer
+
+                    interval: Config.bar.hoverEnterDelay
+                    onTriggered: barBody.hovered = true
+                }
+
+                Timer {
+                    id: exitTimer
+
+                    interval: Config.bar.hoverExitDelay
+                    onTriggered: barBody.hovered = false
                 }
 
                 Item {
