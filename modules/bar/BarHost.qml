@@ -44,8 +44,7 @@ Item {
     readonly property bool coversOsd:root.views[root.requestedView]?.item?.coversOsd === true
     // The expanded bar shows the states the OSD would announce (its own mute buttons trigger them).
     readonly property bool osdAllowed: !coversOsd && (requestedView === "bar" ? !root.barExpanded : Config.osd.showOverViews)
-    // An announcement this monitor can't show now: a level is dropped (the slider or icon that
-    // changed it is the cue), a message is held with its timer paused and plays once it can.
+    // An announcement this monitor can't show now (OsdService.setBlocked decides what happens to it).
     readonly property bool osdBlocked: OsdService.showing && root.isFocusedMonitor && !root.osdAllowed
     // Also re-checked when a level replaces a held message (osdBlocked stays true then).
     readonly property bool osdLevelBlocked: root.osdBlocked && OsdService.showsLevel
@@ -103,13 +102,6 @@ Item {
         root.displayedView = root.targetView;
     }
 
-    function applyOsdBlock() {
-        if (root.osdBlocked && OsdService.showsLevel)
-            OsdService.dismiss();
-        else
-            OsdService.setHeld(root.osdBlocked);
-    }
-
     // page: optional, the view's page to open on.
     function navigateTo(view, page) {
         if (view === "bar")
@@ -124,15 +116,15 @@ Item {
             Qt.callLater(ViewService.close)
         }
     }
-    onOsdLevelBlockedChanged: Qt.callLater(root.applyOsdBlock)
+    onOsdLevelBlockedChanged: Qt.callLater(() => OsdService.setBlocked(root.osdBlocked))
     // A monitor going away while it holds a message would leave it paused, never hiding.
     Component.onDestruction: {
         if (root.osdBlocked)
-            OsdService.setHeld(false);
+            OsdService.setBlocked(false);
     }
     onOsdBlockedChanged: {
         // Deferred: dismissing writes `showing`, which this binding reads (a binding loop that drops the write).
-        Qt.callLater(root.applyOsdBlock);
+        Qt.callLater(() => OsdService.setBlocked(root.osdBlocked));
     }
     onTargetViewChanged: root.scheduleSwitch()
     onRetractedChanged: root.scheduleSwitch()

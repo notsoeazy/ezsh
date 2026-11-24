@@ -10,21 +10,24 @@ Item {
     readonly property int panelWidth: 440
     readonly property int contentPadding: Tokens.spacing.md
     // Each page is loaded only while shown (PageSlot).
-    readonly property var pages: ({
-            home: homeSlot,
-            wifi: wifiSlot,
-            bluetooth: bluetoothSlot,
-            nightlight: nightLightSlot,
-            battery: batterySlot,
-            audio: audioSlot
+    readonly property var pageFiles: ({
+            home: "HomePage.qml",
+            wifi: "WifiPage.qml",
+            bluetooth: "BluetoothPage.qml",
+            nightlight: "NightLightPage.qml",
+            audio: "AudioPage.qml",
+            battery: "BatteryPage.qml"
         })
-    readonly property PanelPage page: root.pages[root.pageName]?.item ?? null
+    readonly property var pageNames: Object.keys(root.pageFiles)
+    // From children, not Repeater.itemAt(): itemAt isn't a dependency, and countChanged can come before the slot exists.
+    readonly property PanelPage page: Array.from(pageArea.children).find(slot => slot.name === root.pageName)?.item ?? null
     readonly property bool open: ViewService.view === "controlpanel"
     // Its sliders change the levels the OSD shows; the OSD would cover the panel.
     readonly property bool coversOsd: true
     // A Menu hangs outside the body; Bar takes input on the whole window while this is true.
     readonly property bool popupOpen: root.page?.overlayOpen === true
 
+    // ViewService.page while open, kept while the panel fades out so the page doesn't change under it.
     property string pageName: "home"
     property real contentHeight: root.page?.implicitHeight ?? 0
 
@@ -36,13 +39,14 @@ Item {
     focus: true
 
     function openPage(name) {
-        if (!(name in root.pages)) {
-            console.warn("ControlPanelView: unknown page", name);
-            name = "home";
-        }
-        root.pageName = name;
         if (root.open)
             ViewService.open("controlpanel", name === "home" ? "" : name, ViewService.monitorName);
+    }
+
+    function pageFor(name) {
+        if (name && !(name in root.pageFiles))
+            console.warn("ControlPanelView: unknown page", name);
+        return name in root.pageFiles ? name : "home";
     }
 
     function back() {
@@ -54,8 +58,6 @@ Item {
             root.closeRequested();
     }
 
-    Component.onCompleted: root.openPage(ViewService.page || "home")
-
     Keys.onEscapePressed: root.back()
 
     Behavior on contentHeight {
@@ -64,14 +66,12 @@ Item {
         }
     }
 
-    Connections {
-        target: ViewService
-
-        function onPageChanged() {
-            const name = ViewService.page || "home";
-            if (root.open && name !== root.pageName)
-                root.openPage(name);
-        }
+    Binding {
+        when: root.open
+        target: root
+        property: "pageName"
+        value: root.pageFor(ViewService.page)
+        restoreMode: Binding.RestoreNone
     }
 
     Item {
@@ -83,82 +83,21 @@ Item {
         height: root.contentHeight
         clip: true
 
-        PageSlot {
-            id: homeSlot
+        Repeater {
+            model: root.pageNames
 
-            width: pageArea.width
-            name: "home"
-            source: "HomePage.qml"
-            currentPage: root.pageName
-            open: root.open
-            onPageRequested: name => root.openPage(name)
-            onBackRequested: root.back()
-            onNavigateRequested: view => root.navigateRequested(view)
-        }
+            PageSlot {
+                required property string modelData
 
-        PageSlot {
-            id: wifiSlot
-
-            width: pageArea.width
-            name: "wifi"
-            source: "WifiPage.qml"
-            currentPage: root.pageName
-            open: root.open
-            onPageRequested: name => root.openPage(name)
-            onBackRequested: root.back()
-            onNavigateRequested: view => root.navigateRequested(view)
-        }
-
-        PageSlot {
-            id: bluetoothSlot
-
-            width: pageArea.width
-            name: "bluetooth"
-            source: "BluetoothPage.qml"
-            currentPage: root.pageName
-            open: root.open
-            onPageRequested: name => root.openPage(name)
-            onBackRequested: root.back()
-            onNavigateRequested: view => root.navigateRequested(view)
-        }
-
-        PageSlot {
-            id: nightLightSlot
-
-            width: pageArea.width
-            name: "nightlight"
-            source: "NightLightPage.qml"
-            currentPage: root.pageName
-            open: root.open
-            onPageRequested: name => root.openPage(name)
-            onBackRequested: root.back()
-            onNavigateRequested: view => root.navigateRequested(view)
-        }
-
-        PageSlot {
-            id: audioSlot
-
-            width: pageArea.width
-            name: "audio"
-            source: "AudioPage.qml"
-            currentPage: root.pageName
-            open: root.open
-            onPageRequested: name => root.openPage(name)
-            onBackRequested: root.back()
-            onNavigateRequested: view => root.navigateRequested(view)
-        }
-
-        PageSlot {
-            id: batterySlot
-
-            width: pageArea.width
-            name: "battery"
-            source: "BatteryPage.qml"
-            currentPage: root.pageName
-            open: root.open
-            onPageRequested: name => root.openPage(name)
-            onBackRequested: root.back()
-            onNavigateRequested: view => root.navigateRequested(view)
+                width: pageArea.width
+                name: modelData
+                source: root.pageFiles[modelData]
+                currentPage: root.pageName
+                open: root.open
+                onPageRequested: name => root.openPage(name)
+                onBackRequested: root.back()
+                onNavigateRequested: view => root.navigateRequested(view)
+            }
         }
     }
 }

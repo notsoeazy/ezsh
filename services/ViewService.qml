@@ -19,7 +19,7 @@ Singleton {
     }
 
     function close() {
-        // Order matters: LauncherView reopens a page when page changes while view is still "launcher", so clear view first or closing would reopen it.
+        // Order matters: views follow page only while open (LauncherView, ControlPanelView), so clear view first or the closing view would jump to its first page.
         root.view = "";
         root.page = "";
     }

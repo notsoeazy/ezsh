@@ -182,7 +182,7 @@ PanelPage {
         width: parent.width
         sliderEnabled: AudioService.outputReady
         icon: AudioService.volumeIcon
-        value: AudioService.outputMuted ? 0 : AudioService.volume
+        value: AudioService.displayVolume
         buttonIcon: AudioService.micIcon
         buttonChecked: AudioService.inputReady && !AudioService.micMuted
         Accessible.name: "Volume"

@@ -36,14 +36,14 @@ Item {
     implicitHeight: root.contentPadding * 2 + search.height + listArea.height + hints.height + Tokens.spacing.sm * 2
 
     function openPage(name) {
-        if (!(name in root.pages)) {
+        if (ViewService.view === "launcher")
+            ViewService.open("launcher", name === "apps" ? "" : name, ViewService.monitorName);
+    }
+
+    function pageFor(name) {
+        if (name && !(name in root.pages))
             console.warn("LauncherView: unknown page", name);
-            name = "apps";
-        }
-        root.pageName = name;
-        search.text = "";
-        root.page.prepare();
-        ViewService.open("launcher", name === "apps" ? "" : name, ViewService.monitorName);
+        return name in root.pages ? name : "apps";
     }
 
     function showResults() {
@@ -79,20 +79,23 @@ Item {
     Component.onDestruction: SymbolService.scheduleRelease()
 
     Component.onCompleted: {
-        root.openPage(ViewService.page || "apps");
+        root.page.prepare();
         root.showResults();
+    }
+
+    onPageNameChanged: {
+        search.text = "";
+        root.page.prepare();
     }
 
     onResultsChanged: root.showResults()
 
-    Connections {
-        target: ViewService
-
-        function onPageChanged() {
-            const name = ViewService.page || "apps";
-            if (ViewService.view === "launcher" && name !== root.pageName)
-                root.openPage(name);
-        }
+    Binding {
+        when: ViewService.view === "launcher"
+        target: root
+        property: "pageName"
+        value: root.pageFor(ViewService.page)
+        restoreMode: Binding.RestoreNone
     }
 
     AppsPage {
@@ -182,14 +185,14 @@ Item {
                 onPointChanged: {
                     if (!root.pointerMoved(point.scenePosition))
                         return;
-                    const index = list.indexAt(point.position.x + list.contentX, point.position.y + list.contentY);
+                    const index = list.indexAt(point.position.x, point.position.y);
                     if (index >= 0)
                         list.currentIndex = index;
                 }
             }
 
             TapHandler {
-                onTapped: eventPoint => root.activate(list.indexAt(eventPoint.position.x + list.contentX, eventPoint.position.y + list.contentY))
+                onTapped: eventPoint => root.activate(list.indexAt(eventPoint.position.x, eventPoint.position.y))
             }
         }
 

@@ -16,7 +16,7 @@ Singleton {
             isLevel: true,
             enabled: () => Config.osd.showVolume,
             icon: () => AudioService.volumeIcon,
-            level: () => AudioService.outputMuted ? 0 : AudioService.volume,
+            level: () => AudioService.displayVolume,
             setLevel: value => AudioService.setVolume(value),
             stepLevel: direction => AudioService.stepVolume(direction)
         },
@@ -126,8 +126,12 @@ Singleton {
         root.showing = false;
     }
 
-    function setHeld(held) {
-        root.held = held;
+    function setBlocked(blocked) {
+        if (blocked && root.showsLevel) {
+            root.dismiss();
+            return;
+        }
+        root.held = blocked;
         root.restartHideTimer();
     }
 

@@ -41,7 +41,7 @@ PanelPage {
         width: parent.width
         sliderEnabled: AudioService.outputReady
         icon: AudioService.volumeIcon
-        value: AudioService.outputMuted ? 0 : AudioService.volume
+        value: AudioService.displayVolume
         buttonIcon: AudioService.outputMuted ? "volume_off" : "volume_up"
         buttonChecked: AudioService.outputReady && !AudioService.outputMuted
         Accessible.name: "Volume"
@@ -54,7 +54,7 @@ PanelPage {
         width: parent.width
         sliderEnabled: AudioService.inputReady
         icon: "mic"
-        value: AudioService.micMuted ? 0 : AudioService.micVolume
+        value: AudioService.displayMicVolume
         buttonIcon: AudioService.micIcon
         buttonChecked: AudioService.inputReady && !AudioService.micMuted
         Accessible.name: "Microphone"
