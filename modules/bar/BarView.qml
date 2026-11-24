@@ -22,20 +22,20 @@ Item {
     readonly property real leftWidth: Math.max(0, root.leftBase + (root.sidesWidth - root.leftBase - root.rightBase) / 2)
     readonly property real rightWidth: Math.max(0, root.rightBase + (root.sidesWidth - root.leftBase - root.rightBase) / 2)
 
-    // The dashboard row under the expanded bar: always, or ("auto") only while it has something to show.
-    readonly property bool dashboardWanted: Config.bar.dashboardMode === "always" || dashboard.hasActivity
-    // 0..1; eases the row in and out when activity starts or ends while the bar is open.
     property real dashboardProgress: root.dashboardWanted ? 1 : 0
-    // Extra room between the top rows and the dashboard, with the divider centered in it.
+    readonly property bool dashboardWanted: Config.bar.dashboardMode === "always" || dashboard.hasActivity
     readonly property int dividerGap: Tokens.spacing.xxs
-    // Bar sizes the expanded body to these; the row widens it as well as lengthening it.
+    readonly property int dashboardPadding: Tokens.spacing.md
     readonly property real expandedWidth: Config.bar.expandedWidth
         + Math.max(0, Config.bar.dashboardWidth - Config.bar.expandedWidth) * root.dashboardProgress
     readonly property real expandedHeight: Tokens.bar.expandedHeight
-        + (root.dividerGap + dashboard.implicitHeight + Tokens.bar.verticalPadding * 2) * root.dashboardProgress
+        + (root.dividerGap + dashboard.implicitHeight + root.dashboardPadding * 2) * root.dashboardProgress
     readonly property bool popupOpen: dashboard.popupOpen
 
     signal navigateRequested(string view, string page)
+
+    implicitWidth: root.contentWidth + Math.max(0, root.expandedWidth - root.contentWidth) * root.progress
+    implicitHeight: Tokens.bar.collapsedHeight + (root.expandedHeight - Tokens.bar.collapsedHeight) * root.progress
 
     Behavior on dashboardProgress {
         Anim {}
@@ -158,10 +158,10 @@ Item {
         id: dashboard
 
         x: Tokens.bar.horizontalPadding
-        y: Tokens.bar.expandedHeight + root.dividerGap + Tokens.bar.verticalPadding
+        y: Tokens.bar.expandedHeight + root.dividerGap + root.dashboardPadding
         width: root.width - Tokens.bar.horizontalPadding * 2
         height: implicitHeight
-        opacity: Math.max(0, (root.progress - Tokens.bar.secondaryRevealStart) / (1 - Tokens.bar.secondaryRevealStart)) * root.dashboardProgress
+        opacity: left.secondaryRevealProgress * root.dashboardProgress
         visible: opacity > 0
         enabled: root.expanded
     }

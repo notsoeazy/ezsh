@@ -3,7 +3,6 @@ import QtQuick
 import qs
 import qs.services
 
-// The expanded bar's second row, a compact dashboard: tray apps, the media player, compact notifications
 Item {
     id: root
 

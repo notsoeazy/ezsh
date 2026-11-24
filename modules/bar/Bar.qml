@@ -21,8 +21,6 @@ Scope {
 
     readonly property int cornerRadius: Config.bar.cornerRadius
 
-    readonly property int osdPadding: Tokens.spacing.xs
-
     Variants {
         model: Quickshell.screens
 
@@ -132,31 +130,8 @@ Scope {
                     to: 1
                 }
 
-                readonly property real targetWidth: {
-                    switch (barHost.displayedView) {
-                    case "osd":
-                        return barHost.osdWidth + root.osdPadding * 2
-                    case "bar":
-                        return barHost.barContentWidth
-                            + (Math.max(barHost.barExpandedWidth, barHost.barContentWidth) - barHost.barContentWidth) * progress
-                    default:
-                        return barHost.viewWidth
-                    }
-                }
-
-                readonly property real targetHeight: {
-                    switch (barHost.displayedView) {
-                        case "osd":
-                            return barHost.osdHeight + root.osdPadding * 2
-                        case "bar":
-                            return root.collapsedHeight + (barHost.barExpandedHeight - root.collapsedHeight) * progress
-                        default:
-                            return barHost.viewHeight
-                    }
-                }
-
-                readonly property real bodyWidth: previousWidth + (targetWidth - previousWidth) * resizeProgress
-                readonly property real bodyHeight: previousHeight + (targetHeight - previousHeight) * resizeProgress
+                readonly property real bodyWidth: previousWidth + (barHost.displayedWidth - previousWidth) * resizeProgress
+                readonly property real bodyHeight: previousHeight + (barHost.displayedHeight - previousHeight) * resizeProgress
                 readonly property real radius: Math.min(isFloating ? root.collapsedHeight / 2 : root.cornerRadius, bodyWidth / 2)
                 readonly property real radiusY: Math.min(radius, bodyHeight / 2)
                 readonly property real shoulderRadiusX: Math.max(0.01, radius * Math.abs(cornerFlip))

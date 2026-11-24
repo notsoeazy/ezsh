@@ -15,11 +15,7 @@ Item {
     readonly property int dotSize: 4
     // The apps listed; the last ones are kept while the list fades out after they all leave.
     property var apps: []
-    readonly property int pageCount: Math.max(1, Math.ceil(root.apps.length / root.pageSize))
-    readonly property int shownPage: Math.min(root.requestedPage, root.pageCount - 1)
-    readonly property real pageHeight: root.pageSize * root.rowHeight + (root.pageSize - 1) * root.rowGap
-    
-    property int requestedPage: 0
+
     property real shownProgress: NotificationService.apps.length > 0 ? 1 : 0
     property real dotsProgress: NotificationService.apps.length > root.pageSize ? 1 : 0
 
@@ -55,7 +51,7 @@ Item {
 
         Item {
             width: parent.width
-            height: root.pageHeight
+            height: strip.implicitHeight
 
             Column {
                 width: parent.width
@@ -90,64 +86,54 @@ Item {
                 }
             }
 
-            Item {
+            PagedStrip {
+                id: strip
+
                 anchors {
                     left: parent.left
                     right: parent.right
                     rightMargin: (root.dotSize + Tokens.spacing.xs) * root.dotsProgress
                 }
                 height: parent.height
-                clip: true
                 opacity: root.shownProgress
                 visible: opacity > 0
+                vertical: true
+                pageSize: root.pageSize
+                itemExtent: root.rowHeight
+                gap: root.rowGap
+                model: root.apps
 
-                Column {
-                    width: parent.width
-                    y: -root.shownPage * (root.pageHeight + root.rowGap)
-                    spacing: root.rowGap
+                delegate: Item {
+                    id: appRow
 
-                    Behavior on y {
-                        Anim {
-                            duration: Tokens.animDuration.spatialFast
-                        }
+                    required property var modelData
+
+                    width: strip.width
+                    height: root.rowHeight
+
+                    TintedIcon {
+                        id: appIcon
+
+                        anchors.right: parent.right
+                        anchors.verticalCenter: parent.verticalCenter
+                        size: root.appIconSize
+                        source: IconService.source(appRow.modelData.icon)
+                        fallback: "notifications"
                     }
 
-                    Repeater {
-                        model: root.apps
-
-                        Item {
-                            id: appRow
-
-                            required property var modelData
-
-                            width: parent.width
-                            height: root.rowHeight
-
-                            TintedIcon {
-                                id: appIcon
-
-                                anchors.right: parent.right
-                                anchors.verticalCenter: parent.verticalCenter
-                                size: root.appIconSize
-                                source: IconService.source(appRow.modelData.icon)
-                                fallback: "notifications"
-                            }
-
-                            StyledText {
-                                anchors {
-                                    left: parent.left
-                                    right: appIcon.left
-                                    rightMargin: Tokens.spacing.xs
-                                    verticalCenter: parent.verticalCenter
-                                }
-
-                                elideText: true
-                                animateFontSize: false
-                                text: appRow.modelData.app
-                                font.pixelSize: Tokens.fontSize.sm
-                                color: Theme.color.m3onSurface
-                            }
+                    StyledText {
+                        anchors {
+                            left: parent.left
+                            right: appIcon.left
+                            rightMargin: Tokens.spacing.xs
+                            verticalCenter: parent.verticalCenter
                         }
+
+                        elideText: true
+                        animateFontSize: false
+                        text: appRow.modelData.app
+                        font.pixelSize: Tokens.fontSize.sm
+                        color: Theme.color.m3onSurface
                     }
                 }
             }
@@ -163,7 +149,7 @@ Item {
 
                 Repeater {
                     // At least two, so the dots don't drop to one while fading out.
-                    model: Math.max(2, root.pageCount)
+                    model: Math.max(2, strip.pageCount)
 
                     StyledRectangle {
                         required property int index
@@ -171,7 +157,7 @@ Item {
                         width: root.dotSize
                         height: root.dotSize
                         radius: Tokens.radius.full
-                        color: Qt.alpha(Theme.color.m3onSurfaceVariant, index === root.shownPage ? 1 : Tokens.opacity.disabledContent)
+                        color: Qt.alpha(Theme.color.m3onSurfaceVariant, index === strip.shownPage ? 1 : Tokens.opacity.disabledContent)
                     }
                 }
             }
@@ -180,6 +166,6 @@ Item {
 
     WheelArea {
         anchors.fill: parent
-        onStepped: direction => root.requestedPage = Math.max(0, Math.min(root.pageCount - 1, root.shownPage - direction))
+        onStepped: direction => strip.turnPage(-direction)
     }
 }

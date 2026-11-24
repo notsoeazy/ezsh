@@ -28,25 +28,19 @@ Item {
             controlpanel: controlPanelSlot,
             session: sessionSlot
         })
-    readonly property real barContentWidth: barView.contentWidth
-    readonly property real barExpandedWidth: barView.expandedWidth
-    readonly property real barExpandedHeight: barView.expandedHeight
-    readonly property real osdWidth: osdView.implicitWidth
-    readonly property real osdHeight: osdView.implicitHeight
-
-    // The displayed view's size; its slot stays loaded until it has faded out, so Bar resizes from it.
+    readonly property int osdPadding: Tokens.spacing.xs
     readonly property ViewSlot displayedSlot: root.views[root.displayedView] ?? null
-    readonly property real viewWidth: root.displayedSlot?.item?.implicitWidth ?? 0
-    readonly property real viewHeight: root.displayedSlot?.item?.implicitHeight ?? 0
+    readonly property real displayedWidth: root.displayedView === "bar" ? barView.implicitWidth
+        : root.displayedView === "osd" ? osdView.implicitWidth + root.osdPadding * 2
+        : root.displayedSlot?.item?.implicitWidth ?? 0
+    readonly property real displayedHeight: root.displayedView === "bar" ? barView.implicitHeight
+        : root.displayedView === "osd" ? osdView.implicitHeight + root.osdPadding * 2
+        : root.displayedSlot?.item?.implicitHeight ?? 0
 
-    // The displayed view has a Menu open that may hang outside the body.
     readonly property bool popupOpen: root.displayedView === "bar" ? barView.popupOpen : root.displayedSlot?.item?.popupOpen === true
     readonly property bool coversOsd:root.views[root.requestedView]?.item?.coversOsd === true
-    // The expanded bar shows the states the OSD would announce (its own mute buttons trigger them).
     readonly property bool osdAllowed: !coversOsd && (requestedView === "bar" ? !root.barExpanded : Config.osd.showOverViews)
-    // An announcement this monitor can't show now (OsdService.setBlocked decides what happens to it).
     readonly property bool osdBlocked: OsdService.showing && root.isFocusedMonitor && !root.osdAllowed
-    // Also re-checked when a level replaces a held message (osdBlocked stays true then).
     readonly property bool osdLevelBlocked: root.osdBlocked && OsdService.showsLevel
     readonly property bool isFocusedMonitor: root.monitorName === HyprlandService.focusedMonitorName
 
@@ -56,11 +50,9 @@ Item {
     readonly property string targetView: osdRequested && osdAllowed ? "osd" : requestedView
     readonly property string requestedView: ViewService.view !== "" && ViewService.monitorName === root.monitorName ? ViewService.view : "bar"
 
-    // Opacity of whatever is displayed now; the switch commits when it reaches 0.
     readonly property real displayedOpacity: root.displayedView === "bar" ? barView.opacity : root.displayedView === "osd" ? osdView.opacity : (root.displayedSlot?.opacity ?? 0)
 
     property string displayedView: "bar"
-    // The displayed layer is fading out so the target can take over.
     property bool leaving: false
     property bool barExpanded: false
     property real expansionProgress: 0
@@ -73,11 +65,7 @@ Item {
         return root.targetView === "bar" || root.targetView === "osd" || root.views[root.targetView]?.status === Loader.Ready;
     }
 
-    // Called (through scheduleSwitch) whenever the target, readiness, retraction or the displayed
-    // layer's opacity changes: keeps the current layer on screen until the target is loaded, then
-    // fades it out and commits once it has reached 0.
     function scheduleSwitch() {
-        // Deferred: committing changes displayedView, which the triggering bindings depend on.
         Qt.callLater(root.switchViews);
     }
 
@@ -87,7 +75,6 @@ Item {
             return;
         }
         if (root.retracted) {
-            // Nothing is on screen to fade out.
             root.commit(false);
             return;
         }
@@ -102,7 +89,6 @@ Item {
         root.displayedView = root.targetView;
     }
 
-    // page: optional, the view's page to open on.
     function navigateTo(view, page) {
         if (view === "bar")
             ViewService.close()
@@ -117,13 +103,11 @@ Item {
         }
     }
     onOsdLevelBlockedChanged: Qt.callLater(() => OsdService.setBlocked(root.osdBlocked))
-    // A monitor going away while it holds a message would leave it paused, never hiding.
     Component.onDestruction: {
         if (root.osdBlocked)
             OsdService.setBlocked(false);
     }
     onOsdBlockedChanged: {
-        // Deferred: dismissing writes `showing`, which this binding reads (a binding loop that drops the write).
         Qt.callLater(() => OsdService.setBlocked(root.osdBlocked));
     }
     onTargetViewChanged: root.scheduleSwitch()
