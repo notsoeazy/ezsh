@@ -5,18 +5,16 @@ import qs.themes
 import qs.services
 import qs.components
 
-// Nearby Wi-Fi networks. Click one to join it (asking for a password when it is secured and not
-// saved) or, when connected, to disconnect.
 PanelPage {
     id: root
 
-    // Scan only while the list is on screen and Wi-Fi is on.
     readonly property bool scanning: root.shown && NetworkService.wifiEnabled
+    readonly property bool showsStatus: root.joining || NetworkService.failedNetwork !== ""
 
-    // The secured network waiting for its password, or null.
     property var pendingNetwork: null
-    // A password was sent for pendingNetwork and NetworkManager hasn't answered yet.
     property bool joining: false
+    property string statusText: ""
+    property string pendingName: ""
 
     function activate(network) {
         if (network === NetworkService.connectedWifiNetwork) {
@@ -32,7 +30,6 @@ PanelPage {
         }
     }
 
-    // The field stays open until the network connects, so a wrong password can be retyped.
     function join() {
         if (password.text === "" || !root.pendingNetwork)
             return;
@@ -44,7 +41,6 @@ PanelPage {
         root.pendingNetwork = null;
         root.joining = false;
         password.text = "";
-        // Hand the keyboard back to the panel so Esc still goes back.
         root.forceActiveFocus();
     }
 
@@ -57,40 +53,78 @@ PanelPage {
     }
 
     onScanningChanged: NetworkService.setScanning(root.scanning)
-    Component.onDestruction: NetworkService.setScanning(false)
 
-    StyledText {
-        width: parent.width
-        visible: !NetworkService.wifiAvailable || !NetworkService.wifiEnabled || NetworkService.wifiNetworks.length === 0
-        wrapText: true
-        animateFontSize: false
-        text: !NetworkService.wifiAvailable ? "Wi-Fi is unavailable." : !NetworkService.wifiEnabled ? "Wi-Fi is off." : "Looking for networks…"
-        font.pixelSize: Tokens.fontSize.sm
-        color: Theme.color.m3onSurfaceVariant
-    }
-
-    StyledText {
-        width: parent.width
-        visible: root.joining || NetworkService.failedNetwork !== ""
-        elideText: true
-        animateFontSize: false
-        text: root.joining ? `Connecting to ${root.pendingNetwork?.name ?? ""}…`
+    Binding {
+        when: root.showsStatus
+        target: root
+        property: "statusText"
+        value: root.joining ? `Connecting to ${root.pendingNetwork?.name ?? ""}…`
             : NetworkService.failedAuth ? `Wrong password for ${NetworkService.failedNetwork}`
             : `Couldn't connect to ${NetworkService.failedNetwork}`
-        font.pixelSize: Tokens.fontSize.sm
-        color: root.joining ? Theme.color.m3onSurfaceVariant : Theme.color.m3error
+        restoreMode: Binding.RestoreNone
     }
 
-    SearchBar {
-        id: password
+    Binding {
+        when: root.pendingNetwork !== null
+        target: root
+        property: "pendingName"
+        value: root.pendingNetwork?.name ?? ""
+        restoreMode: Binding.RestoreNone
+    }
+    Component.onDestruction: NetworkService.setScanning(false)
+
+    Reveal {
+        id: wifiNotice
 
         width: parent.width
-        visible: root.pendingNetwork !== null
-        icon: "key"
-        placeholder: `Password for ${root.pendingNetwork?.name ?? ""}`
-        echoMode: TextInput.Password
-        onAccepted: root.join()
-        onEscapePressed: root.cancelJoin()
+        vertical: true
+        columnSpacing: parent.spacing
+        revealed: !NetworkService.wifiAvailable || !NetworkService.wifiEnabled || NetworkService.wifiNetworks.length === 0
+
+        StyledText {
+            width: parent.width
+            wrapText: true
+            animateFontSize: false
+            animateTextChange: wifiNotice.progress === 1
+            text: !NetworkService.wifiAvailable ? "Wi-Fi is unavailable." : !NetworkService.wifiEnabled ? "Wi-Fi is off." : "Looking for networks…"
+            font.pixelSize: Tokens.fontSize.sm
+            color: Theme.color.m3onSurfaceVariant
+        }
+    }
+
+    Reveal {
+        width: parent.width
+        vertical: true
+        columnSpacing: parent.spacing
+        revealed: root.showsStatus
+
+        StyledText {
+            width: parent.width
+            elideText: true
+            animateFontSize: false
+            animateTextChange: true
+            text: root.statusText
+            font.pixelSize: Tokens.fontSize.sm
+            color: root.joining ? Theme.color.m3onSurfaceVariant : Theme.color.m3error
+        }
+    }
+
+    Reveal {
+        width: parent.width
+        vertical: true
+        columnSpacing: parent.spacing
+        revealed: root.pendingNetwork !== null
+
+        SearchBar {
+            id: password
+
+            width: parent.width
+            icon: "key"
+            placeholder: `Password for ${root.pendingName}`
+            echoMode: TextInput.Password
+            onAccepted: root.join()
+            onEscapePressed: root.cancelJoin()
+        }
     }
 
     PanelList {
@@ -107,7 +141,6 @@ PanelPage {
         isSelected: network => network === NetworkService.connectedWifiNetwork
         onActivated: network => root.activate(network)
 
-        // The wired link sits with the active connection; shown only while it is up, so it isn't clickable.
         ListItem {
             width: parent.width
             visible: NetworkService.wiredConnected
@@ -120,7 +153,6 @@ PanelPage {
         }
     }
 
-    // shortcut: does nothing until the settings view exists; route it to the network tab then.
     Button {
         width: parent.width
         text: "More settings"

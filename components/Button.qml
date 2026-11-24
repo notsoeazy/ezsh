@@ -56,7 +56,7 @@ Item {
 
     Behavior on endRadius {
         Anim {
-            duration: Tokens.animDuration.spatialSlow
+            duration: Tokens.animDuration.spatial
             easing.type: Easing.OutBack
         }
     }

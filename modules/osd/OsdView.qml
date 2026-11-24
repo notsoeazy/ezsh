@@ -36,7 +36,6 @@ Item {
 
         Anim {
             duration: Tokens.animDuration.spatialFast
-            easing.type: Easing.OutCubic
         }
     }
 

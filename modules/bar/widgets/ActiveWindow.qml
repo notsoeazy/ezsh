@@ -17,22 +17,60 @@ Item {
     implicitWidth: Tokens.icon.md + Tokens.spacing.xs + nameLabel.implicitWidth
     implicitHeight: Math.max(Tokens.icon.md, nameLabel.implicitHeight)
 
-    IconImage {
-        id: appIcon
+    Item {
+        id: iconBox
+
+        property string iconKey: root.iconPath || `glyph:${HyprlandService.activeWindow ? "web_asset" : "desktop_windows"}`
+        readonly property bool isGlyph: iconBox.iconKey.startsWith("glyph:")
 
         anchors.verticalCenter: parent.verticalCenter
-        implicitSize: Tokens.icon.md
-        source: root.iconPath
-        visible: root.iconPath !== "" && status === Image.Ready
-    }
+        width: Tokens.icon.md
+        height: Tokens.icon.md
 
-    StyledIcon {
-        anchors.centerIn: appIcon
-        iconSize: Tokens.icon.md
-        fillAmount: 1
-        text: HyprlandService.activeWindow ? "web_asset" : "desktop_windows"
-        color: Theme.color.m3onSurfaceVariant
-        visible: !appIcon.visible
+        Behavior on iconKey {
+            SequentialAnimation {
+                Anim {
+                    target: iconBox
+                    properties: "opacity,scale"
+                    to: 0
+                    duration: Tokens.animDuration.effectsFast
+                    easing.type: Easing.InCubic
+                }
+                PropertyAction {}
+                ParallelAnimation {
+                    Anim {
+                        target: iconBox
+                        property: "opacity"
+                        to: 1
+                        duration: Tokens.animDuration.effects
+                    }
+                    Anim {
+                        target: iconBox
+                        property: "scale"
+                        to: 1
+                        duration: Tokens.animDuration.spatialFast
+                    }
+                }
+            }
+        }
+
+        IconImage {
+            id: appIcon
+
+            anchors.fill: parent
+            implicitSize: Tokens.icon.md
+            source: iconBox.isGlyph ? "" : iconBox.iconKey
+            visible: !iconBox.isGlyph && status === Image.Ready
+        }
+
+        StyledIcon {
+            anchors.centerIn: parent
+            iconSize: Tokens.icon.md
+            fillAmount: 1
+            text: iconBox.isGlyph ? iconBox.iconKey.slice(6) : "web_asset"
+            color: Theme.color.m3onSurfaceVariant
+            visible: !appIcon.visible
+        }
     }
 
     StyledText {

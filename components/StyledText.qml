@@ -26,9 +26,7 @@ Text {
     Behavior on font.pixelSize {
         enabled: root.animateFontSize
 
-        Anim {
-            easing.type: Easing.OutCubic
-        }
+        Anim {}
     }
 
     Behavior on color {
@@ -53,7 +51,6 @@ Text {
                     property: "opacity"
                     to: 1
                     duration: Tokens.animDuration.effects
-                    easing.type: Easing.OutCubic
                 }
                 Anim {
                     target: root

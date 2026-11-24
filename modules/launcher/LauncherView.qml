@@ -114,7 +114,6 @@ Item {
     SearchBar {
         id: search
 
-        // Takes the keyboard when BarHost shows this view (its ViewSlot gets focus).
         focus: true
         anchors {
             top: parent.top
@@ -128,7 +127,6 @@ Item {
 
         onAccepted: root.activate(list.currentIndex)
         onMoveRequested: direction => root.moveSelection(direction)
-        // Esc always closes; Backspace on an empty search steps back from a page to apps.
         onEscapePressed: root.close()
         onBackspaceOnEmpty: {
             if (root.pageName !== "apps")
@@ -161,7 +159,7 @@ Item {
             visible: count > 0
             clip: true
             boundsBehavior: Flickable.StopAtBounds
-            highlightMoveDuration: Tokens.animDuration.effects
+            highlightMoveDuration: Tokens.animDuration.spatialFast
             highlightMoveVelocity: -1
             highlightResizeDuration: 0
 
@@ -197,8 +195,15 @@ Item {
 
         Column {
             anchors.centerIn: parent
+            opacity: list.count === 0 ? 1 : 0
             visible: list.count === 0
             spacing: Tokens.spacing.xs
+
+            Behavior on opacity {
+                Anim {
+                    duration: Tokens.animDuration.effectsFast
+                }
+            }
 
             StyledIcon {
                 anchors.horizontalCenter: parent.horizontalCenter

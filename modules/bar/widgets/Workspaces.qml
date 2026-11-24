@@ -7,24 +7,16 @@ import qs.themes
 import qs.services
 import qs.components
 
-// One pill for the workspaces of the current page and for special workspaces.
-// Regular: transparent pill with a dot per workspace; changing page slides the
-// dots (next page comes in from the right, previous from the left).
-// Special: the pill fills with color and shows the special's icon + name; click hides it.
-// Scroll anywhere on it to step through workspaces.
 Item {
     id: root
 
-    // This bar's own monitor, so each screen shows its own workspace, page and special.
     readonly property var monitor: HyprlandService.monitorFor(QsWindow.window?.screen)
     readonly property int activeWorkspaceId: root.monitor?.activeWorkspace?.id ?? 1
     readonly property int pageOffset: HyprlandService.pageOffsetOf(root.activeWorkspaceId)
     readonly property string activeSpecialName: HyprlandService.specialNameOn(root.monitor?.name ?? "")
 
     readonly property bool showingSpecial: root.activeSpecialName !== ""
-    // Kept while the special content fades out, so its text doesn't vanish first.
     property string lastSpecialName: ""
-    // The page being drawn; trails pageOffset while the slide plays.
     property int displayedPageOffset: 0
 
     readonly property int activeWidth: 22
@@ -38,7 +30,6 @@ Item {
     Behavior on implicitWidth {
         Anim {
             duration: Tokens.animDuration.spatialFast
-            easing.type: Easing.OutCubic
         }
     }
 
@@ -79,14 +70,12 @@ Item {
             Behavior on opacity {
                 Anim {
                     duration: Tokens.animDuration.effectsFast
-                    easing.type: Easing.OutCubic
                 }
             }
 
             Behavior on scale {
                 Anim {
                     duration: Tokens.animDuration.spatialFast
-                    easing.type: Easing.OutCubic
                 }
             }
 
@@ -111,7 +100,9 @@ Item {
                         : Theme.color.m3surfaceVariant
 
                     Behavior on implicitWidth {
-                        Anim {}
+                        Anim {
+                            duration: Tokens.animDuration.spatialFast
+                        }
                     }
                 }
             }
@@ -130,14 +121,12 @@ Item {
             Behavior on opacity {
                 Anim {
                     duration: Tokens.animDuration.effectsFast
-                    easing.type: Easing.OutCubic
                 }
             }
 
             Behavior on scale {
                 Anim {
                     duration: Tokens.animDuration.spatialFast
-                    easing.type: Easing.OutCubic
                 }
             }
 
@@ -159,7 +148,6 @@ Item {
         }
     }
 
-    // Out with the old page, swap, in with the new one from the opposite side.
     SequentialAnimation {
         id: pageSlide
 
@@ -183,7 +171,6 @@ Item {
             property: "x"
             to: 0
             duration: Tokens.animDuration.spatialFast
-            easing.type: Easing.OutCubic
         }
     }
 
@@ -199,7 +186,6 @@ Item {
                 HyprlandService.toggleSpecialWorkspace(root.lastSpecialName);
                 return;
             }
-            // The dot whose center is closest to the click.
             let closestDotIndex = 0;
             let closestDistance = Infinity;
             for (let i = 0; i < dotRepeater.count; i++) {
@@ -215,7 +201,6 @@ Item {
                 HyprlandService.switchToWorkspace(id);
         }
 
-        // Wheel up goes back, like SUPER + mouse_up in the Hyprland binds.
         onStepped: direction => HyprlandService.switchToWorkspace(root.activeWorkspaceId - direction)
     }
 }

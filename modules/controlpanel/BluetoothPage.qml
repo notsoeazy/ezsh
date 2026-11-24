@@ -21,14 +21,23 @@ PanelPage {
     onDiscoveringChanged: BluetoothService.setDiscovering(root.discovering)
     Component.onDestruction: BluetoothService.setDiscovering(false)
 
-    StyledText {
+    Reveal {
+        id: bluetoothNotice
+
         width: parent.width
-        visible: !BluetoothService.available || !BluetoothService.enabled || BluetoothService.devices.length === 0
-        wrapText: true
-        animateFontSize: false
-        text: !BluetoothService.available ? "Bluetooth is unavailable." : !BluetoothService.enabled ? "Bluetooth is off." : "Looking for devices…"
-        font.pixelSize: Tokens.fontSize.sm
-        color: Theme.color.m3onSurfaceVariant
+        vertical: true
+        columnSpacing: parent.spacing
+        revealed: !BluetoothService.available || !BluetoothService.enabled || BluetoothService.devices.length === 0
+
+        StyledText {
+            width: parent.width
+            wrapText: true
+            animateFontSize: false
+            animateTextChange: bluetoothNotice.progress === 1
+            text: !BluetoothService.available ? "Bluetooth is unavailable." : !BluetoothService.enabled ? "Bluetooth is off." : "Looking for devices…"
+            font.pixelSize: Tokens.fontSize.sm
+            color: Theme.color.m3onSurfaceVariant
+        }
     }
 
     PanelList {
