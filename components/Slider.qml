@@ -32,24 +32,36 @@ Item {
         radius: height / 2
         color: Theme.color.m3surfaceContainerHighest
 
+        StyledIcon {
+            id: icon
+
+            x: (root.height - width) / 2 + Tokens.spacing.xxs
+            anchors.verticalCenter: parent.verticalCenter
+            iconSize: Tokens.icon.md
+            fillAmount: 1
+            text: root.icon
+            color: Theme.color.m3onSurface
+            visible: root.icon !== ""
+        }
+
         StyledRectangle {
             // Overshoot past either end is clipped by the pill.
             width: Math.max(0, root.displayedValue) * parent.width
             height: parent.height
             color: Theme.color.m3primary
+            // The icon again in the on-fill colour, cut off where the fill ends.
+            clip: true
+
+            StyledIcon {
+                x: icon.x
+                y: icon.y
+                iconSize: icon.iconSize
+                fillAmount: 1
+                text: root.icon
+                color: Theme.color.m3onPrimary
+                visible: icon.visible
+            }
         }
-    }
-
-    StyledIcon {
-        id: icon
-
-        x: (root.height - width) / 2 + Tokens.spacing.xxs
-        anchors.verticalCenter: parent.verticalCenter
-        iconSize: Tokens.icon.md
-        fillAmount: 1
-        text: root.icon
-        color: root.displayedValue * root.width >= icon.x + icon.width ? Theme.color.m3onPrimary : Theme.color.m3onSurface
-        visible: root.icon !== ""
     }
 
     WheelArea {
