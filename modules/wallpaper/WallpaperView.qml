@@ -1,5 +1,4 @@
 import QtQuick
-import Quickshell.Widgets
 
 import qs
 import qs.config
@@ -19,7 +18,6 @@ Item {
     readonly property real thumbHeight: root.thumbWidth * 9 / 16
     readonly property real selectedScale: 1.25
     readonly property int visibleThumbs: 5
-    readonly property int selectedBorder: 2
     readonly property real stripHeight: root.thumbHeight * root.selectedScale + Tokens.spacing.xs * 2
     readonly property real stripWidth: root.thumbWidth * root.visibleThumbs + Tokens.spacing.xxxl * (root.visibleThumbs - 1)
     readonly property string selectedPath: WallpaperService.images[root.selectedIndex] ?? ""
@@ -75,7 +73,7 @@ Item {
         }
     }
 
-    ListView {
+    Carousel {
         id: strip
 
         anchors {
@@ -86,127 +84,40 @@ Item {
         }
 
         height: root.stripHeight
-        orientation: ListView.Horizontal
-        spacing: Tokens.spacing.xxxl
-        clip: true
-        interactive: false
+        itemWidth: root.thumbWidth
+        itemHeight: root.thumbHeight
         focus: true
         model: WallpaperService.images
         currentIndex: root.selectedIndex
-        highlightMoveDuration: root.placing ? 0 : Tokens.animDuration.spatialFast
-        highlightMoveVelocity: -1
-        preferredHighlightBegin: (width - root.thumbWidth) / 2
-        preferredHighlightEnd: (width + root.thumbWidth) / 2
-        highlightRangeMode: ListView.StrictlyEnforceRange
+        instant: root.placing
 
-        // Let the first and last thumbnails reach the center.
-        header: Item {
-            width: Math.max(0, (strip.width - root.thumbWidth) / 2)
-            height: strip.height
-        }
-        footer: Item {
-            width: Math.max(0, (strip.width - root.thumbWidth) / 2)
-            height: strip.height
-        }
-
-        delegate: Item {
+        delegate: CarouselCard {
             id: thumb
 
             required property string modelData
             required property int index
 
-            property real factor: thumb.selected ? root.selectedScale : 1
-
-            readonly property bool selected: thumb.index === root.selectedIndex
-
             width: root.thumbWidth
             height: strip.height
-            z: thumb.selected ? 1 : 0
+            cardWidth: root.thumbWidth
+            cardHeight: root.thumbHeight
+            selectedScale: root.selectedScale
+            selected: thumb.index === root.selectedIndex
+            accessibleName: thumb.modelData.split("/").pop()
 
-            Accessible.role: Accessible.Button
-            Accessible.name: thumb.modelData.split("/").pop()
-            Accessible.onPressAction: root.select(thumb.index)
+            onClicked: root.select(thumb.index)
 
-            Behavior on factor {
-                Anim {
-                    duration: Tokens.animDuration.spatialFast
-                }
-            }
-
-            ClippingRectangle {
-                id: frame
-
-                anchors.centerIn: parent
-                width: root.thumbWidth * thumb.factor
-                height: root.thumbHeight * thumb.factor
-                radius: Tokens.radius.lg
-                color: Theme.color.m3surfaceContainerHigh
-
-                Image {
-                    anchors.fill: parent
-                    source: WallpaperService.thumbnails[thumb.modelData] ?? ""
-                    fillMode: Image.PreserveAspectCrop
-                    asynchronous: true
-                }
-
-                MouseArea {
-                    anchors.fill: parent
-                    cursorShape: Qt.PointingHandCursor
-                    onClicked: root.select(thumb.index)
-                }
-            }
-
-            StyledRectangle {
-                anchors.fill: frame
-                radius: frame.radius
-                color: "transparent"
-                border.width: root.selectedBorder
-                border.color: Theme.color.m3primary
-                opacity: thumb.selected ? 1 : 0
-                visible: opacity > 0
-
-                Behavior on opacity {
-                    Anim {
-                        duration: Tokens.animDuration.effectsFast
-                    }
-                }
+            Image {
+                anchors.fill: parent
+                source: WallpaperService.thumbnails[thumb.modelData] ?? ""
+                fillMode: Image.PreserveAspectCrop
+                asynchronous: true
             }
         }
 
-        Keys.onLeftPressed: root.select(root.selectedIndex - 1)
-        Keys.onRightPressed: root.select(root.selectedIndex + 1)
-        Keys.onReturnPressed: root.apply()
-        Keys.onEnterPressed: root.apply()
-        Keys.onEscapePressed: root.closeRequested()
-    }
-
-    MouseArea {
-        id: wheelArea
-
-        property real pendingDelta: 0
-
-        anchors.fill: strip
-        acceptedButtons: Qt.NoButton
-
-        onWheel: event => {
-            wheelArea.pendingDelta -= event.angleDelta.y + event.angleDelta.x;
-            const steps = Math.trunc(wheelArea.pendingDelta / 120);
-            if (steps !== 0) {
-                wheelArea.pendingDelta -= steps * 120;
-                root.select(root.selectedIndex + steps);
-            }
-        }
-    }
-
-    StyledText {
-        anchors.fill: strip
-        visible: WallpaperService.images.length === 0
-        horizontalAlignment: Text.AlignHCenter
-        verticalAlignment: Text.AlignVCenter
-        elideText: true
-        text: `No wallpapers in ${WallpaperService.directory}`
-        font.pixelSize: Tokens.fontSize.sm
-        color: Theme.color.m3onSurfaceVariant
+        onSelectRequested: index => root.select(index)
+        onAccepted: root.apply()
+        onCancelled: root.closeRequested()
     }
 
     Item {
@@ -224,10 +135,13 @@ Item {
         height: hints.implicitHeight
 
         StyledText {
-            anchors.left: parent.left
-            anchors.right: counter.left
-            anchors.rightMargin: Tokens.spacing.md
-            anchors.verticalCenter: parent.verticalCenter
+            anchors {
+                left: parent.left
+                right: counter.left
+                rightMargin: Tokens.spacing.md
+                verticalCenter: parent.verticalCenter
+            }
+
             animateFontSize: false
             elideText: true
             text: root.selectedPath.split("/").pop()

@@ -18,7 +18,7 @@ Singleton {
     property string lastShownSpecial: ""
 
     readonly property int screencastDebounceInterval: 1000
-    
+
     readonly property bool usingLua: Hyprland.usingLua
 
     readonly property string focusedMonitorName: Hyprland.focusedMonitor?.name ?? ""

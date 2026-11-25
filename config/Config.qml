@@ -12,6 +12,7 @@ Singleton {
     readonly property Services services: Services {}
     readonly property Launcher launcher: Launcher {}
     readonly property Wallpaper wallpaper: Wallpaper {}
+    readonly property Theming theme: Theming {}
     readonly property NightLight nightLight: NightLight {}
     readonly property Session session: Session {}
     readonly property Capture capture: Capture {}
@@ -77,6 +78,12 @@ Singleton {
         readonly property string directory: "~/Pictures/Wallpapers"
         // Ms to wait after a change before decoding the new wallpaper, so fast browsing skips images.
         readonly property int previewDelay: 120
+    }
+
+    component Theming: QtObject {
+        // Where the Hyprland, terminal and GTK color files go (hypr/colors.lua, kitty/colors.conf, ...).
+        // "" keeps them in $XDG_STATE_HOME/ezsh/generated; "~/.config" writes them next to each app's config.
+        readonly property string outputDirectory: ""
     }
 
     component NightLight: QtObject {

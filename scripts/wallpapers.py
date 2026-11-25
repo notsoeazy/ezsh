@@ -2,10 +2,11 @@
 """Wallpaper discovery and thumbnails for WallpaperService.
 
 Usage:
-  wallpapers.py scan DIR
+  wallpapers.py scan DIR [EXTRA...]
       Prints JSON {"images": [path...], "sizes": {path: [w, h]}} for every JPG/PNG/WebP under
       DIR (recursive, hidden entries and directory symlinks skipped), sorted by file name.
       Sizes are read from the header only, rotated by EXIF orientation like Qt's autoTransform.
+      Each EXTRA that exists (the kept wallpaper) gets a size too, but is not listed in images.
   wallpapers.py thumbs WIDTH HEIGHT PATH...
       Prints one JSON line [path, thumb or null] per PATH, in the order given, as each is ready.
       Thumbnails are WIDTH x HEIGHT center crops in $XDG_CACHE_HOME/ezsh/wallpaper-thumbs, named
@@ -14,6 +15,10 @@ Usage:
       Prints JSON "/path/to/copy.png": PATH scaled down to just cover WIDTH x HEIGHT, for images
       too large for Qt to decode (its default limit is 256 MiB decoded). Cached in
       $XDG_CACHE_HOME/ezsh/wallpaper-fit under the same kind of name.
+  wallpapers.py keep PATH TARGET
+      Hard-links PATH to TARGET (a copy across filesystems), so the wallpaper stays when PATH is
+      deleted or moved, and removes older kept copies with another extension. Does nothing when
+      TARGET already holds PATH.
 
 Why a separate process: decoding hundreds of multi-megapixel images in the shell would block it
 and leave Qt holding the decoded memory. Needs Pillow (python-pillow).
@@ -23,6 +28,7 @@ import hashlib
 import json
 import math
 import os
+import shutil
 import sys
 from pathlib import Path
 
@@ -35,7 +41,7 @@ FIT_CACHE = CACHE_ROOT / "wallpaper-fit"
 ROTATED = (5, 6, 7, 8)  # EXIF orientations that swap width and height
 
 
-def scan(directory: str) -> None:
+def scan(directory: str, extras: list) -> None:
     images, sizes = [], {}
     for root, dirs, files in os.walk(directory):  # followlinks=False: no symlink loops
         dirs[:] = [d for d in dirs if not d.startswith(".") and not os.path.islink(os.path.join(root, d))]
@@ -43,7 +49,7 @@ def scan(directory: str) -> None:
             if not name.startswith(".") and os.path.splitext(name)[1].lower() in EXTENSIONS:
                 images.append(os.path.join(root, name))
     images.sort(key=lambda path: (os.path.basename(path).casefold(), path))
-    for path in images:
+    for path in images + [e for e in extras if os.path.isfile(e)]:
         try:
             with Image.open(path) as image:  # reads only the header
                 width, height = image.size
@@ -107,13 +113,39 @@ def fit(width: int, height: int, path: str) -> None:
     json.dump(str(target), sys.stdout)
 
 
+def same_file(a: str, b: Path) -> bool:
+    """b is a's hard link, or a copy made by keep (copy2 keeps size and mtime)."""
+    if not b.is_file():
+        return False
+    sa, sb = os.stat(a), b.stat()
+    return (sa.st_dev, sa.st_ino) == (sb.st_dev, sb.st_ino) or (sa.st_size, sa.st_mtime_ns) == (sb.st_size, sb.st_mtime_ns)
+
+
+def keep(path: str, target: str) -> None:
+    target = Path(target)
+    if not same_file(path, target):
+        target.parent.mkdir(parents=True, exist_ok=True)
+        partial = target.with_name(f".{target.name}.tmp")
+        partial.unlink(missing_ok=True)
+        try:
+            os.link(path, partial)
+        except OSError:  # another filesystem, or one without hard links
+            shutil.copy2(path, partial)
+        partial.replace(target)  # atomic, so the shell never reads half a file
+    for older in target.parent.glob(f"{target.stem}.*"):
+        if older != target:
+            older.unlink(missing_ok=True)
+
+
 def main() -> int:
-    if len(sys.argv) == 3 and sys.argv[1] == "scan":
-        scan(sys.argv[2])
+    if len(sys.argv) >= 3 and sys.argv[1] == "scan":
+        scan(sys.argv[2], sys.argv[3:])
     elif len(sys.argv) >= 4 and sys.argv[1] == "thumbs":
         thumbs(int(sys.argv[2]), int(sys.argv[3]), sys.argv[4:])
     elif len(sys.argv) == 5 and sys.argv[1] == "fit":
         fit(int(sys.argv[2]), int(sys.argv[3]), sys.argv[4])
+    elif len(sys.argv) == 4 and sys.argv[1] == "keep":
+        keep(sys.argv[2], sys.argv[3])
     else:
         print(__doc__, file=sys.stderr)
         return 2

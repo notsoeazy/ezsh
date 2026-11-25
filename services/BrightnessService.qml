@@ -39,6 +39,14 @@ Singleton {
         function decrease(): void {
             root.screenBacklight.stepLevel(-1);
         }
+
+        function keyboardIncrease(): void {
+            root.keyboardBacklight.stepLevel(1);
+        }
+
+        function keyboardDecrease(): void {
+            root.keyboardBacklight.stepLevel(-1);
+        }
     }
 
     // Hyprland: bind = ..., global, ezsh:brightnessUp
@@ -54,6 +62,20 @@ Singleton {
         name: "brightnessDown"
         description: "Lower screen brightness"
         onPressed: root.screenBacklight.stepLevel(-1)
+    }
+
+    GlobalShortcut {
+        appid: "ezsh"
+        name: "keyboardBrightnessUp"
+        description: "Raise keyboard backlight"
+        onPressed: root.keyboardBacklight.stepLevel(1)
+    }
+
+    GlobalShortcut {
+        appid: "ezsh"
+        name: "keyboardBrightnessDown"
+        description: "Lower keyboard backlight"
+        onPressed: root.keyboardBacklight.stepLevel(-1)
     }
 
     // "name,class,current,percent,max" per device.

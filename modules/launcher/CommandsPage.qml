@@ -2,6 +2,8 @@ import QtQuick
 
 import "../../utils/fuzzysort.mjs" as Fuzzysort
 
+import qs.themes
+import qs.services
 import qs.modules.launcher.widgets
 
 LauncherPage {
@@ -25,6 +27,18 @@ LauncherPage {
             subtitle: "Choose the desktop wallpaper",
             symbol: "wallpaper",
             view: "wallpaper"
+        },
+        {
+            title: "theme",
+            subtitle: "Choose the color theme",
+            symbol: "palette",
+            view: "theme"
+        },
+        {
+            title: "dark mode",
+            subtitle: Theme.dark ? "Switch to light mode" : "Switch to dark mode",
+            symbol: Theme.dark ? "light_mode" : "dark_mode",
+            run: ThemeService.toggleMode
         }
     ]
     readonly property var index: Fuzzysort.default.snapshot(root.commands, {
@@ -55,9 +69,13 @@ LauncherPage {
     }
 
     function activate(entry, launcher) {
-        if (entry.view)
+        if (entry.run) {
+            entry.run();
+            launcher.close();
+        } else if (entry.view) {
             launcher.navigateRequested(entry.view);
-        else
+        } else {
             launcher.openPage(entry.page);
+        }
     }
 }

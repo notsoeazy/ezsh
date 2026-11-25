@@ -3,6 +3,7 @@ import QtQuick.Shapes
 
 import qs.config
 import qs.themes
+import qs.components
 
 Shape {
     id: root
@@ -21,6 +22,10 @@ Shape {
         fillColor: Theme.color.m3background
         fillRule: ShapePath.OddEvenFill
         strokeWidth: -1
+
+        Behavior on fillColor {
+            CAnim {}
+        }
 
         PathRectangle {
             width: root.width

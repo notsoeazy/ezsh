@@ -8,9 +8,8 @@ StyledText {
 
     property real fillAmount: 0
     property int iconSize: Tokens.icon.md
-    property int symbolWeight: 400
-    property int grade: 0
-    // property int grade: LightMode ? 0 : -25
+    property int symbolWeight: Tokens.icon.weight
+    property int grade: Theme.dark ? Tokens.icon.gradeDark : Tokens.icon.gradeLight
 
     horizontalAlignment: Text.AlignHCenter
     verticalAlignment: Text.AlignVCenter

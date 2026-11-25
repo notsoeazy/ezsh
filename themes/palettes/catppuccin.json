@@ -1,0 +1,50 @@
+{
+    "source": "https://catppuccin.com/palette (MIT)",
+    "themes": [
+        { "id": "catppuccin-mocha", "name": "Mocha", "dark": "mocha", "light": "latte" },
+        { "id": "catppuccin-macchiato", "name": "Macchiato", "dark": "macchiato", "light": "latte" },
+        { "id": "catppuccin-frappe", "name": "Frappé", "dark": "frappe", "light": "latte" }
+    ],
+    "palettes": {
+        "mocha": {
+            "crust": "#11111b", "mantle": "#181825", "base": "#1e1e2e",
+            "surface0": "#313244", "surface1": "#45475a", "surface2": "#585b70",
+            "overlay": "#7f849c", "subtext": "#bac2de", "text": "#cdd6f4",
+            "primary": "#cba6f7", "secondary": "#89b4fa", "tertiary": "#f5c2e7", "error": "#f38ba8",
+            "term": [
+                "#45475a", "#f38ba8", "#a6e3a1", "#f9e2af", "#89b4fa", "#f5c2e7", "#94e2d5", "#bac2de",
+                "#585b70", "#f38ba8", "#a6e3a1", "#f9e2af", "#89b4fa", "#f5c2e7", "#94e2d5", "#a6adc8"
+            ]
+        },
+        "macchiato": {
+            "crust": "#181926", "mantle": "#1e2030", "base": "#24273a",
+            "surface0": "#363a4f", "surface1": "#494d64", "surface2": "#5b6078",
+            "overlay": "#8087a2", "subtext": "#b8c0e0", "text": "#cad3f5",
+            "primary": "#c6a0f6", "secondary": "#8aadf4", "tertiary": "#f5bde6", "error": "#ed8796",
+            "term": [
+                "#494d64", "#ed8796", "#a6da95", "#eed49f", "#8aadf4", "#f5bde6", "#8bd5ca", "#b8c0e0",
+                "#5b6078", "#ed8796", "#a6da95", "#eed49f", "#8aadf4", "#f5bde6", "#8bd5ca", "#a5adcb"
+            ]
+        },
+        "frappe": {
+            "crust": "#232634", "mantle": "#292c3c", "base": "#303446",
+            "surface0": "#414559", "surface1": "#51576d", "surface2": "#626880",
+            "overlay": "#838ba7", "subtext": "#b5bfe2", "text": "#c6d0f5",
+            "primary": "#ca9ee6", "secondary": "#8caaee", "tertiary": "#f4b8e4", "error": "#e78284",
+            "term": [
+                "#51576d", "#e78284", "#a6d189", "#e5c890", "#8caaee", "#f4b8e4", "#81c8be", "#b5bfe2",
+                "#626880", "#e78284", "#a6d189", "#e5c890", "#8caaee", "#f4b8e4", "#81c8be", "#a5adce"
+            ]
+        },
+        "latte": {
+            "crust": "#dce0e8", "mantle": "#e6e9ef", "base": "#eff1f5",
+            "surface0": "#ccd0da", "surface1": "#bcc0cc", "surface2": "#acb0be",
+            "overlay": "#8c8fa1", "subtext": "#5c5f77", "text": "#4c4f69",
+            "primary": "#8839ef", "secondary": "#1e66f5", "tertiary": "#ea76cb", "error": "#d20f39",
+            "term": [
+                "#5c5f77", "#d20f39", "#40a02b", "#df8e1d", "#1e66f5", "#ea76cb", "#179299", "#acb0be",
+                "#6c6f85", "#d20f39", "#40a02b", "#df8e1d", "#1e66f5", "#ea76cb", "#179299", "#bcc0cc"
+            ]
+        }
+    }
+}

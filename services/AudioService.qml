@@ -110,6 +110,18 @@ Singleton {
         function decrease(): void {
             root.stepVolume(-1);
         }
+
+        function toggleMute(): void {
+            root.toggleOutputMute();
+        }
+    }
+
+    IpcHandler {
+        target: "mic"
+
+        function toggleMute(): void {
+            root.toggleMicMute();
+        }
     }
 
     GlobalShortcut {
@@ -124,6 +136,20 @@ Singleton {
         name: "volumeDown"
         description: "Lower volume"
         onPressed: root.stepVolume(-1)
+    }
+
+    GlobalShortcut {
+        appid: "ezsh"
+        name: "volumeMute"
+        description: "Mute or unmute the output"
+        onPressed: root.toggleOutputMute()
+    }
+
+    GlobalShortcut {
+        appid: "ezsh"
+        name: "micMute"
+        description: "Mute or unmute the microphone"
+        onPressed: root.toggleMicMute()
     }
 
     PwObjectTracker {

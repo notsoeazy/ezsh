@@ -10,6 +10,7 @@ import qs.modules.launcher
 import qs.modules.wallpaper
 import qs.modules.controlpanel
 import qs.modules.session
+import qs.modules.theme
 
 // Routes the bar body between its views: the bar itself, the OSD, and the views in `views`
 // (opened through ViewService). The OSD (from OsdService) shows over an open view, which stays
@@ -32,6 +33,7 @@ Item {
     readonly property var views: ({
             launcher: launcherSlot,
             wallpaper: wallpaperSlot,
+            theme: themeSlot,
             controlpanel: controlPanelSlot,
             session: sessionSlot
         })
@@ -174,6 +176,18 @@ Item {
         name: "wallpaper"
 
         sourceComponent: WallpaperView {
+            onCloseRequested: ViewService.close()
+        }
+    }
+
+    ViewSlot {
+        id: themeSlot
+
+        anchors.fill: parent
+        host: root
+        name: "theme"
+
+        sourceComponent: ThemeView {
             onCloseRequested: ViewService.close()
         }
     }

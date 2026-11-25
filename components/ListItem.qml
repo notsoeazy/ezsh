@@ -100,9 +100,12 @@ Item {
     StyledIcon {
         id: trailing
 
-        anchors.right: parent.right
-        anchors.rightMargin: Tokens.spacing.md
-        anchors.verticalCenter: parent.verticalCenter
+        anchors {
+            right: parent.right
+            rightMargin: Tokens.spacing.md
+            verticalCenter: parent.verticalCenter
+        }
+
         visible: !root.radio && root.trailingIcon !== ""
         text: root.trailingIcon
         iconSize: Tokens.icon.md
@@ -112,9 +115,12 @@ Item {
     RadioButton {
         id: radioButton
 
-        anchors.right: parent.right
-        anchors.rightMargin: Tokens.spacing.xs
-        anchors.verticalCenter: parent.verticalCenter
+        anchors {
+            right: parent.right
+            rightMargin: Tokens.spacing.xs
+            verticalCenter: parent.verticalCenter
+        }
+
         visible: root.radio
         checked: root.checked
     }

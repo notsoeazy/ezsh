@@ -17,14 +17,18 @@ Singleton {
     property var fitQueue: []
     property string preview: ""
     property string saved: ""
-    property bool stateRead: false
     // A thumbnail run was asked for while one was busy; run again when it ends (new images since).
     property bool thumbnailRerunQueued: false
+    // A keep was asked for while one was busy; it runs again when that one ends.
+    property bool keepQueued: false
 
     readonly property string directory: FilePaths.absolutePath(Config.wallpaper.directory)
     readonly property int thumbnailWidth: 480
     readonly property int thumbnailHeight: 270
-    readonly property string current: !root.stateRead ? "" : root.images.includes(root.saved) ? root.saved : (root.images[0] ?? "")
+    // The chosen wallpaper's own copy, so it stays on screen when the original is deleted or moved.
+    readonly property string keptPath: root.saved ? `${FilePaths.state}/wallpaper-image${root.saved.slice(root.saved.lastIndexOf(".")).toLowerCase()}` : ""
+    // "" until the first scan; the kept copy has a size once a scan has found it.
+    readonly property string current: root.images.includes(root.saved) ? root.saved : root.sizes[root.keptPath] ? root.keptPath : (root.images[0] ?? "")
     readonly property string showing: root.preview || root.current
 
     // Qt's default image allocation limit; larger images get a screen-sized copy from the script.
@@ -33,20 +37,35 @@ Singleton {
     readonly property int decodeBytesPerPixel: 8
 
     function setPreview(path) {
-        if (root.images.includes(path))
-            root.preview = path;
+        if (!root.images.includes(path))
+            return;
+        root.preview = path;
+        ThemeService.wallpaperPreviewChanged();
     }
 
     function clearPreview() {
         root.preview = "";
+        ThemeService.wallpaperPreviewChanged();
     }
 
+    // Saved first, so the theme starts applying before the preview clears and its colors don't flash.
     function set(path) {
-        if (!root.images.includes(path))
+        if (!root.images.includes(path) || path === root.saved)
             return;
         root.saved = path;
+        ThemeService.wallpaperChanged();
         root.preview = "";
         stateFile.setText(path);
+        root.keep();
+    }
+
+    function keep() {
+        if (keeper.running) {
+            root.keepQueued = true;
+            return;
+        }
+        keeper.command = ["python3", "-I", Quickshell.shellPath("scripts/wallpapers.py"), "keep", root.saved, root.keptPath];
+        keeper.running = true;
     }
 
     function needsFit(path) {
@@ -103,6 +122,12 @@ Singleton {
         thumbnailer.running = true;
     }
 
+    // Read before the first scan, which needs the kept copy's path.
+    Component.onCompleted: {
+        root.saved = stateFile.text().trim();
+        root.refresh();
+    }
+
     onDirectoryChanged: {
         root.thumbnails = {};
         root.refresh();
@@ -114,20 +139,15 @@ Singleton {
         path: `${FilePaths.state}/wallpaper`
         atomicWrites: true
         printErrors: false
+        blockLoading: true
 
-        onLoaded: {
-            root.saved = stateFile.text().trim();
-            root.stateRead = true;
-        }
-        onLoadFailed: root.stateRead = true
         onSaveFailed: error => console.warn("WallpaperService: could not save the wallpaper:", FileViewError.toString(error))
     }
 
     Process {
         id: scanner
 
-        command: ["python3", "-I", Quickshell.shellPath("scripts/wallpapers.py"), "scan", root.directory]
-        running: true
+        command: ["python3", "-I", Quickshell.shellPath("scripts/wallpapers.py"), "scan", root.directory, ...(root.keptPath ? [root.keptPath] : [])]
 
         stdout: StdioCollector {
             onStreamFinished: {
@@ -145,10 +165,14 @@ Singleton {
         stderr: ScriptErrors {}
 
         onExited: code => {
-            if (code !== 0)
+            if (code !== 0) {
                 console.warn("WallpaperService: scanning", root.directory, "failed with code", code);
-            else
-                root.makeThumbnails();
+                return;
+            }
+            root.makeThumbnails();
+            // Wallpapers chosen before copies were kept get one too.
+            if (root.images.includes(root.saved))
+                root.keep();
         }
     }
 
@@ -208,6 +232,21 @@ Singleton {
             }
             root.fitQueue = root.fitQueue.slice(1);
             Qt.callLater(root.fitNext);
+        }
+    }
+
+    Process {
+        id: keeper
+
+        stderr: ScriptErrors {}
+
+        onExited: code => {
+            if (code !== 0)
+                console.warn("WallpaperService: keeping a copy of", root.saved, "failed with code", code);
+            if (root.keepQueued) {
+                root.keepQueued = false;
+                Qt.callLater(root.keep);
+            }
         }
     }
 

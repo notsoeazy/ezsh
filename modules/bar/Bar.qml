@@ -148,9 +148,12 @@ Scope {
                     ShapePath {
                         fillColor: root.backgroundColor
                         strokeWidth: -1
-
                         startX: barBody.radius * (1 - barBody.cornerFlip)
                         startY: 0
+
+                        Behavior on fillColor {
+                            CAnim {}
+                        }
 
                         PathArc {
                             relativeX: barBody.radius * barBody.cornerFlip
