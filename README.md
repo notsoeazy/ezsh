@@ -16,6 +16,22 @@ A Shell for my Arch + Hyprland setup.
 - **Screen capture**: region, window or whole screen, with an annotation editor (pen, shapes, arrows, text, highlight, blur).
 - **Screen recording**: region, window or screen, with optional audio, pause and resume.
 
+## Showcase
+
+| | |
+|---|---|
+| ![Desktop: bar notch and screen border](assets/showcase/desktop.webp)<br>Desktop: bar notch and screen border | ![Expanded bar: dashboard with media, tray and notifications](assets/showcase/bar-expanded.webp)<br>Expanded bar: dashboard with media, tray and notifications |
+| ![App launcher](assets/showcase/launcher.webp)<br>App launcher | ![Emoji and Nerd Font symbols](assets/showcase/launcher-symbols.webp)<br>Emoji and Nerd Font symbols |
+| ![Wallpaper selector](assets/showcase/wallpaper-selector.webp)<br>Wallpaper selector | ![Theme selector](assets/showcase/theme-selector.webp)<br>Theme selector |
+| ![Control panel](assets/showcase/control-panel.webp)<br>Control panel | ![Audio devices and levels](assets/showcase/control-panel-audio.webp)<br>Audio devices and levels |
+| ![Power profiles and battery charge limit](assets/showcase/control-panel-battery.webp)<br>Power profiles and battery charge limit | ![Session menu](assets/showcase/session-menu.webp)<br>Session menu |
+| ![Volume OSD](assets/showcase/osd.webp)<br>Volume OSD | ![Screen capture](assets/showcase/screen-capture.webp)<br>Screen capture |
+| ![Settings window](assets/showcase/settings.webp)<br>Settings window | ![Idle lock, screen off and suspend settings](assets/showcase/settings-session.webp)<br>Idle lock, screen off and suspend settings |
+| ![OSD message](assets/showcase/osd-message.webp)<br>OSD message (night light) | ![Annotation editor](assets/showcase/screen-capture-annotate.webp)<br>Annotation editor: shapes, arrows, text, highlight, pen |
+
+![Lock screen](assets/showcase/lock-screen.webp)
+Lock screen: the bar clock grows into the large clock; the password field appears when you type.
+
 ## Planned
 
 - [ ] Color picker
