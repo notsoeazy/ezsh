@@ -1,0 +1,10 @@
+#%PAM-1.0
+# ezsh lock screen (LockService). Arch's system-auth password stack, with the faillock lockout after 5 wrong passwords
+# instead of faillock.conf's deny (default 3). The tally is shared with every other login, and unlock_time comes from
+# /etc/security/faillock.conf (default 600 s).
+auth       required                    pam_faillock.so      preauth deny=5
+-auth      [success=2 default=ignore]  pam_systemd_home.so
+auth       [success=1 default=bad]     pam_unix.so          try_first_pass nullok
+auth       [default=die]               pam_faillock.so      authfail deny=5
+auth       optional                    pam_permit.so
+auth       required                    pam_faillock.so      authsucc deny=5

@@ -3,6 +3,7 @@ import Quickshell
 import qs.modules
 import qs.modules.bar
 import qs.modules.capture
+import qs.modules.lock
 import qs.modules.settings
 import qs.modules.wallpaper
 
@@ -14,4 +15,5 @@ ShellRoot {
     Bar {}
     CaptureOverlay {}
     Settings {}
+    Lock {}
 }

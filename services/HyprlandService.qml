@@ -138,6 +138,13 @@ Singleton {
     }
 
     // Ends the Hyprland session (log out).
+    function setDpms(on) {
+        if (root.usingLua)
+            Hyprland.dispatch(`hl.dsp.dpms({ action = "${on ? "enable" : "disable"}" })`);
+        else
+            Hyprland.dispatch(on ? "dpms on" : "dpms off");
+    }
+
     function exit() {
         // shortcut: the Lua name hl.dsp.exit() is assumed from the dispatcher naming, verify on a Lua config.
         if (root.usingLua)

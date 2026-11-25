@@ -12,15 +12,13 @@ A Shell for my Arch + Hyprland setup.
 - **Theme selector**: predefined themes (Catppuccin, Rosé Pine, Nord, Gruvbox, Tokyo Night, Dracula, Everforest, Noir) and Dynamic (matugen colors from the wallpaper), in dark, or light where the theme has a light version, previewed live. Applying also themes Hyprland, kitty, foot and GTK. (TO BE TESTED once hypr/ dotfiles are finalized)
 - **Control panel**: Wi-Fi, Bluetooth, audio devices, brightness and volume, night light, keep awake, Do Not Disturb, power profiles and battery charge limit.
 - **Session menu**: lock, log out, restart, shut down.
+- **Lock screen**: the bar clock grows into a large clock over the wallpaper; password checked through PAM (`assets/pam/ezsh`, locks out for faillock's `unlock_time` after 5 wrong passwords). Locks on `loginctl lock-session` and before sleep; idle timers lock, turn the screens off and suspend (Settings → Session).
 - **Screen capture**: region, window or whole screen, with an annotation editor (pen, shapes, arrows, text, highlight, blur).
 - **Screen recording**: region, window or screen, with optional audio, pause and resume.
 
 ## Planned
 
 - [ ] Color picker
-- [ ] Lockscreen
-- [ ] Configurations
-- [ ] Settings
 - [ ] Hyprland config
 - [ ] SDDM greeter
 
@@ -60,6 +58,7 @@ Every command is `qs -c ezsh ipc call <target> <function> [args...]`. `qs -c ezs
 | `capture` | `pause` | Pause or resume the recording |
 | `capture` | `stop` | Stop the recording |
 | `capture` | `cancel` | Close the capture overlay without capturing |
+| `lock` | `lock` | Lock the session (same as `loginctl lock-session`) |
 
 Views and their pages:
 
@@ -156,3 +155,4 @@ November 25, 2026
 - [x] Screen capture (region/window/screen, annotation editor) and screen recording
 - [-] Theming: theme selector, dynamic (matugen) theme, light mode, Hyprland/terminal/GTK templates
 - [x] Settings window (~/.config/ezsh/config.json, live reload): network, bluetooth, display, audio, bar, clock, appearance, launcher, OSD, capture, session
+- [x] Lock screen (WlSessionLock + PAM, follows logind's Lock)

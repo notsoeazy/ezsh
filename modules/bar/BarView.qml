@@ -42,6 +42,12 @@ Item {
         Anim {}
     }
 
+    // Under every widget: a click on empty bar space opens the control panel.
+    MouseArea {
+        anchors.fill: parent
+        onClicked: root.navigateRequested("controlpanel", "")
+    }
+
     BarGroup {
         id: left
 
@@ -101,14 +107,25 @@ Item {
             })
             animateFontSize: false
             scale: animatedFontSize / font.pixelSize
+            // The lock screen draws this clock while locked (it grows out of and back into this spot).
+            opacity: LockService.locked ? 0 : 1
             font.weight: Tokens.font.semibold
             color: Theme.color.m3onSurface
+
+            // Reserved for the calendar: keeps clicks off the control panel area beneath.
+            MouseArea {
+                anchors.fill: parent
+            }
         }
 
         secondaryComponent: StyledText {
             text: TimeService.shortDate
             font.pixelSize: Tokens.fontSize.xs
             color: Theme.color.m3onSurfaceVariant
+
+            MouseArea {
+                anchors.fill: parent
+            }
         }
     }
 

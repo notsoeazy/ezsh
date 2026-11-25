@@ -10,11 +10,15 @@ Singleton {
     id: root
 
     function lock() {
-        root.run(Config.session.lock);
+        LockService.lock();
     }
 
     function logout() {
         HyprlandService.exit();
+    }
+
+    function suspend() {
+        root.run(Config.session.suspend);
     }
 
     function reboot() {

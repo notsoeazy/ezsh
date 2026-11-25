@@ -82,7 +82,7 @@ Row {
         iconFilled: true
         icon: NetworkService.icon
         contentColor: NetworkService.online ? Theme.color.m3onSurface : Theme.color.m3outline
-        onClicked: root.navigateRequested("controlpanel", "")
+        onClicked: root.navigateRequested("controlpanel", "wifi")
     }
 
     Button {

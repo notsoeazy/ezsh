@@ -18,8 +18,9 @@ Singleton {
     readonly property bool inputReady: root.inputNode?.audio != null
 
     readonly property real volume: root.outputNode?.audio?.volume ?? 0
-    readonly property bool outputMuted: root.outputNode?.audio?.muted ?? true
-    readonly property bool micMuted: root.inputNode?.audio?.muted ?? true
+    // Muted unless Pipewire says otherwise; `!== false` also turns a mid-reload undefined into a bool.
+    readonly property bool outputMuted: root.outputNode?.audio?.muted !== false
+    readonly property bool micMuted: root.inputNode?.audio?.muted !== false
 
     readonly property string volumeIcon: {
         if (root.outputMuted)

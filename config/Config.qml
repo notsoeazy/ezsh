@@ -179,7 +179,12 @@ Singleton {
     }
 
     component Session: JsonObject {
-        property var lock: ["loginctl", "lock-session"]
+        // Idle seconds, 0 = off.
+        property int lockTimeout: 300
+        property int screenOffTimeout: 600
+        property int suspendTimeout: 900
+        property bool screenOffWhilePlaying: false
+        property var suspend: ["systemctl", "suspend"]
         property var reboot: ["systemctl", "reboot"]
         property var poweroff: ["systemctl", "poweroff"]
     }
