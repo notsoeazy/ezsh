@@ -35,6 +35,12 @@ LauncherPage {
             view: "theme"
         },
         {
+            title: "settings",
+            subtitle: "Open ezsh settings",
+            symbol: "settings",
+            run: () => SettingsService.open("")
+        },
+        {
             title: "dark mode",
             subtitle: Theme.dark ? "Switch to light mode" : "Switch to dark mode",
             symbol: Theme.dark ? "light_mode" : "dark_mode",

@@ -82,13 +82,12 @@ PanelPage {
                 onClicked: root.pageRequested("battery")
             }
 
-            // shortcut: no settings view yet, enable this when it lands.
             Button {
                 anchors.verticalCenter: parent.verticalCenter
                 buttonHeight: root.headerButtonSize
                 icon: "settings"
-                enabled: false
                 Accessible.name: "Settings"
+                onClicked: SettingsService.open("")
             }
 
             Button {

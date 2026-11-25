@@ -11,10 +11,17 @@ Item {
     property real displayedValue: root.value
     property string icon: ""
     property bool interactive: true
+    // A thin track with a bar handle (settings), instead of the filled pill (bar, panel, OSD); no icon.
+    property bool thin: false
 
     readonly property bool pressed: mouseArea.pressed
     readonly property int defaultWidth: 224
     readonly property int defaultHeight: 28
+    readonly property int thinTrackHeight: 6
+    readonly property int handleWidth: 4
+    readonly property int pressedHandleWidth: 2
+    // Space between the handle and the track on either side of it.
+    readonly property int handleGap: 6
 
     signal valueRequested(real value)
     signal stepRequested(int direction)
@@ -37,6 +44,7 @@ Item {
 
     ClippingRectangle {
         anchors.fill: parent
+        visible: !root.thin
         radius: height / 2
         color: Theme.color.m3surfaceContainerHighest
 
@@ -68,6 +76,49 @@ Item {
                 text: root.icon
                 color: Theme.color.m3onPrimary
                 visible: icon.visible
+            }
+        }
+    }
+
+    Item {
+        id: thinSlider
+
+        readonly property real handleX: Math.max(0, Math.min(1, root.displayedValue)) * (root.width - root.handleWidth)
+        readonly property real trackY: (root.height - root.thinTrackHeight) / 2
+
+        anchors.fill: parent
+        visible: root.thin
+
+        StyledRectangle {
+            y: thinSlider.trackY
+            width: Math.max(0, thinSlider.handleX - root.handleGap)
+            height: root.thinTrackHeight
+            radius: Tokens.radius.full
+            color: Theme.color.m3primary
+        }
+
+        StyledRectangle {
+            x: thinSlider.handleX + root.handleWidth + root.handleGap
+            y: thinSlider.trackY
+            width: Math.max(0, root.width - x)
+            height: root.thinTrackHeight
+            radius: Tokens.radius.full
+            color: Theme.color.m3secondaryContainer
+        }
+
+        StyledRectangle {
+            property real pressedWidth: mouseArea.pressed ? root.pressedHandleWidth : root.handleWidth
+
+            x: thinSlider.handleX + (root.handleWidth - width) / 2
+            width: pressedWidth
+            height: root.height
+            radius: Tokens.radius.full
+            color: Theme.color.m3primary
+
+            Behavior on pressedWidth {
+                Anim {
+                    duration: Tokens.animDuration.effectsFast
+                }
             }
         }
     }

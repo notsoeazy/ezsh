@@ -16,6 +16,8 @@ Singleton {
             firstEntries: [],
             firstNerdEntries: []
         })
+    // Ms the index outlives the launcher, so reopening it soon doesn't rebuild the index.
+    readonly property int indexTimeout: 30000
 
     function search(query) {
         if (root.cache.index === null)
@@ -75,7 +77,7 @@ Singleton {
     Timer {
         id: releaseTimer
 
-        interval: Config.launcher.symbolIndexTimeout
+        interval: root.indexTimeout
         onTriggered: root.release()
     }
 

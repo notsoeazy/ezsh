@@ -105,6 +105,11 @@ Singleton {
         network?.disconnect();
     }
 
+    // Deletes the saved profile (password included).
+    function forget(network) {
+        network?.forget();
+    }
+
     // failReason first: the page reads failedAuth when failedNetwork changes. Then drop the profile
     // only if this attempt made it and the key was rejected; a good key lost to a weak signal stays.
     function handleConnectionFailed(network, reason) {

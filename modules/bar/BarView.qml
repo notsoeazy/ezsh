@@ -95,6 +95,10 @@ Item {
 
             text: TimeService.clockText
             font.pixelSize: root.expanded ? Tokens.fontSize.xl : Tokens.fontSize.md
+            // Tabular digits, so a ticking seconds clock doesn't change the bar's width.
+            font.features: ({
+                "tnum": 1
+            })
             animateFontSize: false
             scale: animatedFontSize / font.pixelSize
             font.weight: Tokens.font.semibold

@@ -4,12 +4,16 @@ pragma Singleton
 import QtQuick
 import Quickshell
 
+import qs.config
+
 Singleton {
     id: root
 
     readonly property date now: systemClock.date
 
-    readonly property string clockText: Qt.formatDateTime(root.now, "h:mm AP")
+    readonly property string timeFormat: (Config.clock.use24Hour ? "HH:mm" : "h:mm") + (Config.clock.showSeconds ? ":ss" : "") + (Config.clock.use24Hour ? "" : " AP")
+
+    readonly property string clockText: Qt.formatDateTime(root.now, root.timeFormat)
 
     readonly property string longDate: Qt.formatDateTime(root.now, "dddd, MMMM d")
 
@@ -18,6 +22,6 @@ Singleton {
     SystemClock {
         id: systemClock
 
-        precision: SystemClock.Minutes
+        precision: Config.clock.showSeconds ? SystemClock.Seconds : SystemClock.Minutes
     }
 }

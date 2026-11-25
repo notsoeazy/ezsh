@@ -41,6 +41,8 @@ Singleton {
 
     readonly property var capturingStreams: Pipewire.nodes.values.filter(n => n.type === PwNodeType.AudioInStream)
     readonly property bool micInUse: root.capturingStreams.length > 0
+    // Apps playing sound, each with its own volume.
+    readonly property var playbackStreams: Pipewire.nodes.values.filter(n => n.type === PwNodeType.AudioOutStream)
 
     function setNodeVolume(node, value) {
         if (!node?.audio || !isFinite(value))
@@ -55,6 +57,16 @@ Singleton {
 
     function stepVolume(direction) {
         root.setVolume(root.volume + direction * Config.services.volumeStepPercent / 100);
+    }
+
+    function setOutputMuted(muted) {
+        if (root.outputNode?.audio)
+            root.outputNode.audio.muted = !!muted;
+    }
+
+    function setMicMuted(muted) {
+        if (root.inputNode?.audio)
+            root.inputNode.audio.muted = !!muted;
     }
 
     function toggleOutputMute() {
@@ -87,6 +99,11 @@ Singleton {
 
     function deviceName(node) {
         return node?.description || node?.nickname || node?.name || "Unknown device";
+    }
+
+    // The app behind a playback stream.
+    function streamName(node) {
+        return node?.properties?.["application.name"] || root.deviceName(node);
     }
 
     function deviceIcon(node) {
@@ -153,6 +170,7 @@ Singleton {
     }
 
     PwObjectTracker {
-        objects: [root.outputNode, root.inputNode]
+        // Stream volumes are only live while tracked; few apps play at once.
+        objects: [root.outputNode, root.inputNode, ...root.playbackStreams]
     }
 }

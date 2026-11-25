@@ -3,13 +3,28 @@ pragma Singleton
 import QtQuick
 import Quickshell
 import Quickshell.Bluetooth
+import Quickshell.Io
 
 Singleton {
     id: root
 
+    // What views want (setDiscovering); a refresh stops discovery briefly, then returns to this.
+    property bool discoveryWanted: false
+    // A rename waiting for the one in flight.
+    property string queuedName: ""
+
     readonly property var adapter: Bluetooth.defaultAdapter
     readonly property bool available: root.adapter !== null
     readonly property bool enabled: root.adapter?.enabled ?? false
+    readonly property bool discoverable: root.adapter?.discoverable ?? false
+    readonly property string adapterName: root.adapter?.name ?? ""
+    // BlueZ caps the name at 248 bytes; this keeps it short enough for any device to show.
+    readonly property int maxNameLength: 64
+    // True from a refresh until the next one is allowed, however often it is asked for.
+    readonly property bool refreshing: refreshCooldown.running
+    // How long discovery stays off during a refresh, so BlueZ finishes stopping before it starts again.
+    readonly property int restartDelay: 1000
+    readonly property int refreshInterval: 5000
 
     // Named devices: connected first, then paired, then by name.
     readonly property var devices: (root.adapter?.devices.values ?? []).filter(d => d.name.length > 0)
@@ -59,10 +74,45 @@ Singleton {
         root.adapter.enabled = !!enabled;
     }
 
+    // Other devices can find this computer (BlueZ ends it after the adapter's discoverableTimeout).
+    function setDiscoverable(discoverable) {
+        if (root.available && (root.enabled || !discoverable))
+            root.adapter.discoverable = !!discoverable;
+    }
+
+    // Unpairs and removes the device.
+    function forget(device) {
+        if (device && !root.busy(device))
+            device.forget();
+    }
+
     // Discovery drains battery; views turn it on only while their list is shown.
     function setDiscovering(discovering) {
-        if (root.available && (root.enabled || !discovering))
+        root.discoveryWanted = !!discovering;
+        if (root.available && (root.enabled || !discovering) && !restartTimer.running)
             root.adapter.discovering = !!discovering;
+    }
+
+    // Restarts discovery, so devices that went quiet are found again. Ignored until refreshInterval has passed.
+    function refresh() {
+        if (!root.available || !root.enabled || root.refreshing)
+            return;
+        refreshCooldown.start();
+        root.adapter.discovering = false;
+        restartTimer.start();
+    }
+
+    // The name other devices see for this computer (BlueZ's adapter Alias; Quickshell's is read-only).
+    function rename(name) {
+        const trimmed = `${name ?? ""}`.trim().slice(0, root.maxNameLength);
+        if (!root.available || trimmed === "" || trimmed === root.adapterName)
+            return;
+        if (renamer.running) {
+            root.queuedName = trimmed;
+            return;
+        }
+        renamer.command = ["busctl", "--system", "set-property", "--", "org.bluez", root.adapter.dbusPath, "org.bluez.Adapter1", "Alias", "s", trimmed];
+        renamer.running = true;
     }
 
     // BlueZ's icon comes from the class the device reports, so it wins over a guess from the name.
@@ -105,5 +155,41 @@ Singleton {
             device.connect();
         else
             device.pair();
+    }
+
+    // Discovery asked for while the adapter was off starts once it turns on.
+    onEnabledChanged: {
+        if (root.enabled && root.discoveryWanted && !restartTimer.running)
+            root.adapter.discovering = true;
+    }
+
+    Timer {
+        id: restartTimer
+
+        interval: root.restartDelay
+        onTriggered: {
+            if (root.available && root.enabled)
+                root.adapter.discovering = root.discoveryWanted;
+        }
+    }
+
+    Timer {
+        id: refreshCooldown
+
+        interval: root.refreshInterval
+    }
+
+    Process {
+        id: renamer
+
+        onExited: code => {
+            if (code !== 0)
+                console.warn("BluetoothService: busctl set-property Alias failed with code", code);
+            if (root.queuedName !== "") {
+                const next = root.queuedName;
+                root.queuedName = "";
+                root.rename(next);
+            }
+        }
     }
 }

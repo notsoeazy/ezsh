@@ -155,3 +155,4 @@ November 24, 2026
 November 25, 2026
 - [x] Screen capture (region/window/screen, annotation editor) and screen recording
 - [-] Theming: theme selector, dynamic (matugen) theme, light mode, Hyprland/terminal/GTK templates
+- [x] Settings window (~/.config/ezsh/config.json, live reload): network, bluetooth, display, audio, bar, clock, appearance, launcher, OSD, capture, session
