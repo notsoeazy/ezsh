@@ -11,6 +11,7 @@ Item {
     property int pixelSize: Tokens.fontSize.sm
     property int weight: Tokens.font.regular
     property color color: Theme.color.m3onSurface
+    property real leftFade: label.x < 0 ? 1 : 0
 
     readonly property int speed: 30 // px/s
     readonly property int pause: 2000
@@ -19,7 +20,6 @@ Item {
 
     readonly property bool overflows: label.implicitWidth > root.width
     readonly property real loopDistance: label.implicitWidth + root.gap
-    property real leftFade: label.x < 0 ? 1 : 0
 
     implicitWidth: label.implicitWidth
     implicitHeight: label.implicitHeight

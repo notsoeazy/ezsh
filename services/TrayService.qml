@@ -18,7 +18,11 @@ Singleton {
     }
 
     function activate(item) {
-        item?.activate();
+        const window = HyprlandService.windowOfApp(item?.id);
+        if (window)
+            HyprlandService.focusWindow(window);
+        else
+            item?.activate();
     }
 
     function secondaryActivate(item) {

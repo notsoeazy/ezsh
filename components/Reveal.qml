@@ -1,4 +1,5 @@
 import QtQuick
+
 import qs
 
 Item {
@@ -20,6 +21,12 @@ Item {
     visible: root.revealed || root.progress > 0
     clip: root.vertical
 
+    Behavior on progress {
+        Anim {
+            duration: Tokens.animDuration.spatialFast
+        }
+    }
+
     Item {
         id: contentHolder
 
@@ -29,11 +36,5 @@ Item {
         anchors.verticalCenter: root.vertical ? undefined : parent.verticalCenter
         opacity: root.progress
         scale: root.vertical ? 1 : 0.6 + 0.4 * root.progress
-    }
-
-    Behavior on progress {
-        Anim {
-            duration: Tokens.animDuration.spatialFast
-        }
     }
 }

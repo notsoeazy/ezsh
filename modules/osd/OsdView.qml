@@ -9,9 +9,6 @@ import qs.components
 Item {
     id: root
 
-    readonly property int maxMessageWidth: 480
-    readonly property bool contentChangePending: OsdService.showsLevel !== root.displayedIsLevel || (!OsdService.showsLevel && (OsdService.messageText !== root.displayedText || OsdService.icon !== root.displayedIcon))
-
     property bool displayedIsLevel: false
     property string displayedText: ""
     property string displayedIcon: ""
@@ -19,8 +16,31 @@ Item {
     property real levelValue: 0
     property string levelIcon: ""
 
+    readonly property int maxMessageWidth: 480
+    readonly property bool contentChangePending: OsdService.showsLevel !== root.displayedIsLevel || (!OsdService.showsLevel && (OsdService.messageText !== root.displayedText || OsdService.icon !== root.displayedIcon))
+
     implicitWidth: root.displayedIsLevel ? slider.width : Math.min(root.maxMessageWidth, messageRow.implicitWidth)
     implicitHeight: root.displayedIsLevel ? slider.height : messageRow.height
+
+    function commitDisplayedContent() {
+        root.displayedIsLevel = OsdService.showsLevel;
+        root.displayedText = OsdService.messageText;
+        root.displayedIcon = OsdService.icon;
+    }
+
+    Component.onCompleted: root.commitDisplayedContent()
+
+    onContentChangePendingChanged: {
+        if (!root.contentChangePending)
+            return;
+        if (!root.visible) {
+            contentSwap.stop();
+            root.contentOpacity = 1;
+            Qt.callLater(root.commitDisplayedContent);
+        } else if (!contentSwap.running) {
+            contentSwap.restart();
+        }
+    }
 
     Behavior on implicitWidth {
         enabled: root.visible
@@ -53,26 +73,6 @@ Item {
         value: OsdService.icon
         when: OsdService.showsLevel
         restoreMode: Binding.RestoreNone
-    }
-
-    function commitDisplayedContent() {
-        root.displayedIsLevel = OsdService.showsLevel;
-        root.displayedText = OsdService.messageText;
-        root.displayedIcon = OsdService.icon;
-    }
-
-    Component.onCompleted: root.commitDisplayedContent()
-
-    onContentChangePendingChanged: {
-        if (!root.contentChangePending)
-            return;
-        if (!root.visible) {
-            contentSwap.stop();
-            root.contentOpacity = 1;
-            Qt.callLater(root.commitDisplayedContent);
-        } else if (!contentSwap.running) {
-            contentSwap.restart();
-        }
     }
 
     SequentialAnimation {

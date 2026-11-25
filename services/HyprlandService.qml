@@ -10,7 +10,15 @@ import qs.config
 Singleton {
     id: root
 
-    // Bound (not read on demand) so Quickshell detects Lua mode at startup; a first lazy read returns false.
+    // The screen is being captured (recording/sharing).
+    property bool screencasting: false
+
+    // Special workspace showing per monitor name
+    property var specialByMonitor: ({})
+    property string lastShownSpecial: ""
+
+    readonly property int screencastDebounceInterval: 1000
+    
     readonly property bool usingLua: Hyprland.usingLua
 
     readonly property string focusedMonitorName: Hyprland.focusedMonitor?.name ?? ""
@@ -30,15 +38,6 @@ Singleton {
                 ids[workspace.id] = true;
         return ids;
     }
-
-    // The screen is being captured (recording/sharing). Hyprland also reports a
-    // brief capture for every screenshot, so only flag captures lasting a moment.
-    // shortcut: one shared state, so with two capturing clients the first to stop clears it.
-    property bool screencasting: false
-
-    // Special workspace showing per monitor name, without "special:"; and the last one shown anywhere.
-    property var specialByMonitor: ({})
-    property string lastShownSpecial: ""
 
     // The Hyprland monitor behind a Quickshell screen (each bar asks for its own).
     function monitorFor(screen) {
@@ -66,6 +65,23 @@ Singleton {
         return root.specialNameOn(monitor?.name ?? "") !== "" && root.isTrueFullscreen(monitor?.activeWorkspace);
     }
 
+    // Global rects of the windows shown on a monitor, topmost first: an open special workspace, then
+    // floating, then most recently focused. Reads cached IPC data; call refreshWindows() first.
+    function windowsOn(monitorName) {
+        const monitor = Hyprland.monitors.values.find(m => m.name === monitorName);
+        const special = root.specialNameOn(monitorName);
+        const shown = [monitor?.activeWorkspace?.name, special ? "special:" + special : null];
+        return Hyprland.toplevels.values
+            .map(t => t.lastIpcObject)
+            .filter(w => w?.at && w.mapped && !w.hidden && shown.includes(w.workspace?.name))
+            .sort((a, b) => (b.workspace.name.startsWith("special:") - a.workspace.name.startsWith("special:")) || (b.floating - a.floating) || (a.focusHistoryID - b.focusHistoryID))
+            .map(w => Qt.rect(w.at[0], w.at[1], w.size[0], w.size[1]));
+    }
+
+    function refreshWindows() {
+        Hyprland.refreshToplevels();
+    }
+
     // Special workspaces (id < 1) fall back to the first page.
     function pageOffsetOf(id) {
         return id < 1 ? 0 : Math.floor((id - 1) / root.workspacesPerPage) * root.workspacesPerPage;
@@ -87,6 +103,29 @@ Singleton {
             Hyprland.dispatch(`hl.dsp.focus({ workspace = ${id} })`);
         else
             Hyprland.dispatch(`workspace ${id}`);
+    }
+
+    // The first window whose app id or class is appId (case and punctuation ignored), or null.
+    function windowOfApp(appId) {
+        const key = root.appKey(appId);
+        if (!key)
+            return null;
+        return Hyprland.toplevels.values.find(t => [t.wayland?.appId, t.lastIpcObject?.class, t.lastIpcObject?.initialClass]
+            .some(name => root.appKey(name) === key)) ?? null;
+    }
+
+    function appKey(name) {
+        return (name ?? "").toLowerCase().replace(/[^a-z0-9]/g, "");
+    }
+
+    // Focuses a window, switching to its workspace.
+    function focusWindow(window) {
+        if (!window?.address)
+            return;
+        if (root.usingLua)
+            Hyprland.dispatch(`hl.dsp.focus({ window = "address:0x${window.address}" })`);
+        else
+            Hyprland.dispatch(`focuswindow address:0x${window.address}`);
     }
 
     // Show or hide a special workspace; no name means the last one shown.
@@ -141,7 +180,7 @@ Singleton {
     Timer {
         id: screencastDebounce
 
-        interval: 1000
+        interval: root.screencastDebounceInterval
         onTriggered: root.screencasting = true
     }
 

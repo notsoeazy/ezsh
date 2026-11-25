@@ -22,11 +22,13 @@ Item {
     property color contentColor: root.checked || root.type === "filled" ? Theme.color.m3onPrimary
         : root.type === "standard" ? Theme.color.m3onSurfaceVariant : Theme.color.m3onSurface
 
+    property real pressAmount: mouseArea.pressed ? 1 : 0
+
     readonly property int defaultHeight: 40
     readonly property real pillRadius: root.height / 2
     readonly property real cornerRadius: root.pillRadius + (Tokens.radius.md - root.pillRadius) * root.pressAmount
 
-    property real pressAmount: mouseArea.pressed ? 1 : 0
+    readonly property alias hovered: mouseArea.containsMouse
 
     signal clicked()
     signal secondaryClicked()
@@ -77,7 +79,7 @@ Item {
         bottomLeftRadius: topLeftRadius
         topRightRadius: root.endRadius >= 0 ? root.endRadius : root.cornerRadius
         bottomRightRadius: topRightRadius
-        border.width: root.activeFocus ? 2 : 0
+        border.width: root.activeFocus ? Tokens.stroke.thick : 0
         border.color: Theme.color.m3secondary
 
         StateLayer {
@@ -128,6 +130,6 @@ Item {
         hoverEnabled: true
         acceptedButtons: Qt.LeftButton | Qt.RightButton
         cursorShape: Qt.PointingHandCursor
-        onClicked: mouse => mouse.button === Qt.RightButton ? root.secondaryClicked() : root.clicked()
+        onClicked: event => event.button === Qt.RightButton ? root.secondaryClicked() : root.clicked()
     }
 }

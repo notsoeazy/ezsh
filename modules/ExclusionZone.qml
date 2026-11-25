@@ -1,6 +1,6 @@
+import QtQuick
 import Quickshell
 import Quickshell.Wayland
-import QtQuick
 
 import qs
 import qs.config
@@ -27,26 +27,27 @@ Scope {
                     id: edgePanel
 
                     required property string modelData
-                    readonly property bool isHorizontalEdge: modelData === "top" || modelData === "bottom"
+
+                    readonly property bool isHorizontalEdge: edgePanel.modelData === "top" || edgePanel.modelData === "bottom"
 
                     screen: screenScope.modelData
 
                     anchors {
-                        top: modelData === "top" || !isHorizontalEdge
-                        bottom: modelData === "bottom" || !isHorizontalEdge
-                        left: modelData === "left" || isHorizontalEdge
-                        right: modelData === "right" || isHorizontalEdge
+                        top: edgePanel.modelData === "top" || !edgePanel.isHorizontalEdge
+                        bottom: edgePanel.modelData === "bottom" || !edgePanel.isHorizontalEdge
+                        left: edgePanel.modelData === "left" || edgePanel.isHorizontalEdge
+                        right: edgePanel.modelData === "right" || edgePanel.isHorizontalEdge
                     }
 
-                    implicitWidth: isHorizontalEdge ? 1 : root.edgeReservation
-                    implicitHeight: isHorizontalEdge ? root.edgeReservation : 1
+                    implicitWidth: edgePanel.isHorizontalEdge ? 1 : root.edgeReservation
+                    implicitHeight: edgePanel.isHorizontalEdge ? root.edgeReservation : 1
 
-                    exclusiveZone: modelData === "top" ? root.topReservation : root.edgeReservation
+                    exclusiveZone: edgePanel.modelData === "top" ? root.topReservation : root.edgeReservation
 
                     color: "transparent"
 
                     WlrLayershell.layer: WlrLayer.Top
-                    WlrLayershell.namespace: "quickshell-exclusion-" + modelData
+                    WlrLayershell.namespace: "quickshell-exclusion-" + edgePanel.modelData
 
                     mask: Region {}
                 }

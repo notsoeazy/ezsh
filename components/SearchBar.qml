@@ -20,13 +20,12 @@ FocusScope {
     signal backspaceOnEmpty()
 
     implicitHeight: root.barHeight
+    Accessible.role: Accessible.EditableText
+    Accessible.name: root.placeholder
 
     function selectAll() {
         input.selectAll();
     }
-
-    Accessible.role: Accessible.EditableText
-    Accessible.name: root.placeholder
 
     StyledRectangle {
         anchors.fill: parent

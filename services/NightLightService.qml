@@ -9,13 +9,13 @@ import qs.config
 Singleton {
     id: root
 
-    readonly property int warmest: 2500
-    readonly property int coolest: 6500
-    readonly property int step: 100
-
     property bool enabled: false
     property int temperature: Math.max(root.warmest, Math.min(root.coolest, Config.nightLight.temperature))
     property bool adjustPending: false
+
+    readonly property int warmest: 2500
+    readonly property int coolest: 6500
+    readonly property int step: 100
 
     function toggle() {
         root.enabled = !root.enabled;
@@ -44,7 +44,7 @@ Singleton {
         command: ["setpriv", "--pdeathsig", "TERM", "hyprsunset", "--temperature", `${root.temperature}`]
         onExited: code => {
             if (root.enabled && code !== 0) {
-                console.warn(`NightLightService: hyprsunset exited with code ${code}`);
+                console.warn("NightLightService: hyprsunset failed with code", code);
                 root.enabled = false;
             }
         }
@@ -56,7 +56,7 @@ Singleton {
         command: ["hyprctl", "hyprsunset", "temperature", `${root.temperature}`]
         onExited: code => {
             if (code !== 0)
-                console.warn(`NightLightService: hyprctl hyprsunset exited with code ${code}`);
+                console.warn("NightLightService: hyprctl hyprsunset failed with code", code);
             if (root.adjustPending) {
                 root.adjustPending = false;
                 adjust.running = true;

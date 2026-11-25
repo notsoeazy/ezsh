@@ -32,9 +32,9 @@ Item {
 
     // Same button footprint as StatusIcons so the bell lines up with them.
     Button {
-        type: "standard"
         id: bell
 
+        type: "standard"
         anchors.right: parent.right
         anchors.verticalCenter: parent.verticalCenter
         buttonHeight: Tokens.bar.iconButtonSize

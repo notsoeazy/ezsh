@@ -1,16 +1,21 @@
 import QtQuick
 
 import qs.services
+import qs.modules.launcher.widgets
 
 LauncherPage {
+    id: root
+
     placeholder: "Search apps"
     emptyText: "No apps found"
 
     row: Component {
         EntryRow {
-            title: modelData.name || ""
-            subtitle: modelData.genericName || modelData.comment || ""
-            iconName: modelData.icon || ""
+            id: entryRow
+
+            title: entryRow.modelData.name || ""
+            subtitle: entryRow.modelData.genericName || entryRow.modelData.comment || ""
+            iconName: entryRow.modelData.icon || ""
         }
     }
 

@@ -7,18 +7,17 @@ Item {
 
     required property int pageSize
     required property real itemExtent
-    
+
     property alias model: repeater.model
     property alias delegate: repeater.delegate
     property real gap: 0
     property bool vertical: false
+    property int requestedPage: 0
 
     readonly property int pageCount: Math.max(1, Math.ceil(repeater.count / root.pageSize))
     readonly property int shownPage: Math.min(root.requestedPage, root.pageCount - 1)
     readonly property real pageExtent: root.pageSize * root.itemExtent + (root.pageSize - 1) * root.gap
     readonly property real offset: -root.shownPage * (root.pageExtent + root.gap)
-
-    property int requestedPage: 0
 
     implicitWidth: root.vertical ? 0 : root.pageExtent
     implicitHeight: root.vertical ? root.pageExtent : 0

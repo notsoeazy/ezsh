@@ -9,6 +9,9 @@ import qs.components
 Item {
     id: root
 
+    property string pageName: "apps"
+    property point pointerScene: Qt.point(-1, -1)
+
     readonly property int panelWidth: 500
     readonly property int contentPadding: 12
     readonly property int visibleRows: 6
@@ -25,9 +28,6 @@ Item {
     readonly property int shownRows: Math.min(root.results.length, root.visibleRows)
     readonly property real listTargetHeight: root.shownRows > 0 ? root.shownRows * root.page.rowHeight : root.emptyHeight
     readonly property bool coversOsd: false
-
-    property string pageName: "apps"
-    property point pointerScene: Qt.point(-1, -1)
 
     signal closeRequested()
     signal navigateRequested(string view)
@@ -238,23 +238,25 @@ Item {
 
         hints: [
             {
-                key: "↑↓",
+                keys: ["esc"],
+                label: "close"
+            },
+            "spacer",
+            {
+                keys: ["↑↓"],
                 label: "navigate"
             },
             {
-                key: "↵",
+                keys: ["↵"],
                 label: root.page.actionHint
-            }
-        ].concat(root.pageName === "apps" ? [
-            {
-                key: Config.launcher.commandPrefix,
+            },
+            root.pageName === "apps" ? {
+                keys: [Config.launcher.commandPrefix],
                 label: "commands"
-            }
-        ] : [
-            {
-                key: "⌫",
+            } : {
+                keys: ["⌫"],
                 label: "back"
             }
-        ])
+        ]
     }
 }

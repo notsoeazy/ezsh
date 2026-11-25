@@ -6,7 +6,7 @@ import qs.services
 import qs.components
 
 LauncherPage {
-    id: page
+    id: root
 
     placeholder: "Search clipboard history"
     icon: "content_paste"
@@ -25,7 +25,7 @@ LauncherPage {
             readonly property var imageInfo: row.modelData.image ? row.modelData.text.match(/binary data (.+?) (\w+) (\d+x\d+)/) : null
 
             width: ListView.view?.width ?? 0
-            height: page.rowHeight
+            height: root.rowHeight
 
             Accessible.role: Accessible.ListItem
             Accessible.name: label.text

@@ -14,6 +14,9 @@ Item {
     required property bool expanded
     required property real progress
 
+    property real dashboardProgress: root.dashboardWanted ? 1 : 0
+    property bool recordingMenuOpen: false
+
     readonly property real iconButtonOverhang: (Tokens.bar.iconButtonSize - Tokens.icon.md) / 2
     readonly property real leftBase: Config.bar.symmetricSides ? Math.max(left.primaryWidth, right.primaryWidth) : left.primaryWidth
     readonly property real rightBase: Config.bar.symmetricSides ? Math.max(left.primaryWidth, right.primaryWidth) : right.primaryWidth
@@ -21,8 +24,6 @@ Item {
     readonly property real sidesWidth: root.width - center.width - Tokens.bar.horizontalPadding * 2 + root.iconButtonOverhang - 2 * Tokens.bar.centerGap
     readonly property real leftWidth: Math.max(0, root.leftBase + (root.sidesWidth - root.leftBase - root.rightBase) / 2)
     readonly property real rightWidth: Math.max(0, root.rightBase + (root.sidesWidth - root.leftBase - root.rightBase) / 2)
-
-    property real dashboardProgress: root.dashboardWanted ? 1 : 0
     readonly property bool dashboardWanted: Config.bar.dashboardMode === "always" || dashboard.hasActivity
     readonly property int dividerGap: Tokens.spacing.xxs
     readonly property int dashboardPadding: Tokens.spacing.md
@@ -30,7 +31,7 @@ Item {
         + Math.max(0, Config.bar.dashboardWidth - Config.bar.expandedWidth) * root.dashboardProgress
     readonly property real expandedHeight: Tokens.bar.expandedHeight
         + (root.dividerGap + dashboard.implicitHeight + root.dashboardPadding * 2) * root.dashboardProgress
-    readonly property bool popupOpen: dashboard.popupOpen
+    readonly property bool popupOpen: dashboard.popupOpen || root.recordingMenuOpen
 
     signal navigateRequested(string view, string page)
 
@@ -69,6 +70,7 @@ Item {
 
                 RecordingIndicator {
                     anchors.verticalCenter: parent.verticalCenter
+                    onMenuOpenChanged: root.recordingMenuOpen = menuOpen
                 }
             }
         }
@@ -89,8 +91,9 @@ Item {
         primaryOnTop: true
 
         primaryComponent: StyledText {
-            text: TimeService.clockText
             readonly property real animatedFontSize: Tokens.fontSize.md + (Tokens.fontSize.xl - Tokens.fontSize.md) * root.progress
+
+            text: TimeService.clockText
             font.pixelSize: root.expanded ? Tokens.fontSize.xl : Tokens.fontSize.md
             animateFontSize: false
             scale: animatedFontSize / font.pixelSize
@@ -125,33 +128,13 @@ Item {
         secondaryComponent: NotificationSummary {}
     }
 
-    // Separator
-    Rectangle {
+    Divider {
         x: Tokens.bar.horizontalPadding
         y: Tokens.bar.expandedHeight + root.dividerGap / 2
         width: root.width - Tokens.bar.horizontalPadding * 2
-        height: 1
+        fadeEnds: true
         opacity: dashboard.opacity
         visible: opacity > 0
-
-        gradient: Gradient {
-            orientation: Gradient.Horizontal
-
-            GradientStop {
-                position: 0
-                color: Qt.alpha(Theme.color.m3outlineVariant, 0)
-            }
-
-            GradientStop {
-                position: 0.5
-                color: Theme.color.m3outlineVariant
-            }
-
-            GradientStop {
-                position: 1
-                color: Qt.alpha(Theme.color.m3outlineVariant, 0)
-            }
-        }
     }
 
     Dashboard {

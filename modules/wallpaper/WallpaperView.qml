@@ -10,6 +10,10 @@ import qs.components
 Item {
     id: root
 
+    property int selectedIndex: 0
+    // Jump instead of sliding while the strip is first placed.
+    property bool placing: true
+
     readonly property int contentPadding: 12
     readonly property int thumbWidth: 192
     readonly property real thumbHeight: root.thumbWidth * 9 / 16
@@ -20,10 +24,6 @@ Item {
     readonly property real stripWidth: root.thumbWidth * root.visibleThumbs + Tokens.spacing.xxxl * (root.visibleThumbs - 1)
     readonly property string selectedPath: WallpaperService.images[root.selectedIndex] ?? ""
     readonly property bool coversOsd: false
-
-    property int selectedIndex: 0
-    // Jump instead of sliding while the strip is first placed.
-    property bool placing: true
 
     signal closeRequested()
 
@@ -109,20 +109,15 @@ Item {
             height: strip.height
         }
 
-        Keys.onLeftPressed: root.select(root.selectedIndex - 1)
-        Keys.onRightPressed: root.select(root.selectedIndex + 1)
-        Keys.onReturnPressed: root.apply()
-        Keys.onEnterPressed: root.apply()
-        Keys.onEscapePressed: root.closeRequested()
-
         delegate: Item {
             id: thumb
 
             required property string modelData
             required property int index
 
-            readonly property bool selected: thumb.index === root.selectedIndex
             property real factor: thumb.selected ? root.selectedScale : 1
+
+            readonly property bool selected: thumb.index === root.selectedIndex
 
             width: root.thumbWidth
             height: strip.height
@@ -177,19 +172,27 @@ Item {
                 }
             }
         }
+
+        Keys.onLeftPressed: root.select(root.selectedIndex - 1)
+        Keys.onRightPressed: root.select(root.selectedIndex + 1)
+        Keys.onReturnPressed: root.apply()
+        Keys.onEnterPressed: root.apply()
+        Keys.onEscapePressed: root.closeRequested()
     }
 
     MouseArea {
-        property real pending: 0
+        id: wheelArea
+
+        property real pendingDelta: 0
 
         anchors.fill: strip
         acceptedButtons: Qt.NoButton
 
-        onWheel: wheel => {
-            pending -= wheel.angleDelta.y + wheel.angleDelta.x;
-            const steps = Math.trunc(pending / 120);
+        onWheel: event => {
+            wheelArea.pendingDelta -= event.angleDelta.y + event.angleDelta.x;
+            const steps = Math.trunc(wheelArea.pendingDelta / 120);
             if (steps !== 0) {
-                pending -= steps * 120;
+                wheelArea.pendingDelta -= steps * 120;
                 root.select(root.selectedIndex + steps);
             }
         }
@@ -218,7 +221,7 @@ Item {
             rightMargin: root.contentPadding + Tokens.spacing.xs
         }
 
-        height: hints.hintHeight
+        height: hints.implicitHeight
 
         StyledText {
             anchors.left: parent.left
@@ -256,14 +259,18 @@ Item {
             rightMargin: root.contentPadding + Tokens.spacing.xs
         }
 
-        escapeLabel: "cancel"
         hints: [
             {
-                key: "←→",
+                keys: ["esc"],
+                label: "cancel"
+            },
+            "spacer",
+            {
+                keys: ["←→"],
                 label: "browse"
             },
             {
-                key: "↵",
+                keys: ["↵"],
                 label: "apply"
             }
         ]

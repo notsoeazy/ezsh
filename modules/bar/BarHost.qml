@@ -22,6 +22,13 @@ Item {
 
     required property string monitorName
 
+    property string displayedView: "bar"
+    property bool leaving: false
+    property bool barExpanded: false
+    property real expansionProgress: 0
+    property bool fullscreen: false
+    property bool retracted: false
+
     readonly property var views: ({
             launcher: launcherSlot,
             wallpaper: wallpaperSlot,
@@ -38,8 +45,8 @@ Item {
         : root.displayedSlot?.item?.implicitHeight ?? 0
 
     readonly property bool popupOpen: root.displayedView === "bar" ? barView.popupOpen : root.displayedSlot?.item?.popupOpen === true
-    readonly property bool coversOsd:root.views[root.requestedView]?.item?.coversOsd === true
-    readonly property bool osdAllowed: !coversOsd && (requestedView === "bar" ? !root.barExpanded : Config.osd.showOverViews)
+    readonly property bool coversOsd: root.views[root.requestedView]?.item?.coversOsd === true
+    readonly property bool osdAllowed: !root.coversOsd && (root.requestedView === "bar" ? !root.barExpanded : Config.osd.showOverViews)
     readonly property bool osdBlocked: OsdService.showing && root.isFocusedMonitor && !root.osdAllowed
     readonly property bool osdLevelBlocked: root.osdBlocked && OsdService.showsLevel
     readonly property bool isFocusedMonitor: root.monitorName === HyprlandService.focusedMonitorName
@@ -47,17 +54,10 @@ Item {
     readonly property bool osdRequested: (OsdService.showing && root.isFocusedMonitor) || (root.fullscreen && root.displayedView === "osd" && !root.retracted)
     readonly property bool showsOsd: OsdService.showing && root.isFocusedMonitor && root.osdAllowed
 
-    readonly property string targetView: osdRequested && osdAllowed ? "osd" : requestedView
+    readonly property string targetView: root.osdRequested && root.osdAllowed ? "osd" : root.requestedView
     readonly property string requestedView: ViewService.view !== "" && ViewService.monitorName === root.monitorName ? ViewService.view : "bar"
 
     readonly property real displayedOpacity: root.displayedView === "bar" ? barView.opacity : root.displayedView === "osd" ? osdView.opacity : (root.displayedSlot?.opacity ?? 0)
-
-    property string displayedView: "bar"
-    property bool leaving: false
-    property bool barExpanded: false
-    property real expansionProgress: 0
-    property bool fullscreen: false
-    property bool retracted: false
 
     signal viewChangeStarting(bool animate)
 
@@ -91,15 +91,15 @@ Item {
 
     function navigateTo(view, page) {
         if (view === "bar")
-            ViewService.close()
+            ViewService.close();
         else
-            ViewService.open(view, page ?? "", root.monitorName)
+            ViewService.open(view, page ?? "", root.monitorName);
     }
 
     onRequestedViewChanged: {
         if (root.requestedView !== "bar" && !(root.requestedView in root.views)) {
-            console.warn("BarHost: unknown view", root.requestedView)
-            Qt.callLater(ViewService.close)
+            console.warn("BarHost: unknown view", root.requestedView);
+            Qt.callLater(ViewService.close);
         }
     }
     onOsdLevelBlockedChanged: Qt.callLater(() => OsdService.setBlocked(root.osdBlocked))

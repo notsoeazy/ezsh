@@ -24,10 +24,10 @@ Item {
     signal backRequested()
     signal pageRequested(string name)
 
+    implicitHeight: column.implicitHeight
+
     function closeOverlay() {
     }
-
-    implicitHeight: column.implicitHeight
 
     Column {
         id: column

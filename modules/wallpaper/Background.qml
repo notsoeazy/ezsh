@@ -21,14 +21,14 @@ Scope {
 
             required property var modelData
 
+            property bool frontIsA: true
+            property real revealProgress: 0
+
             readonly property size targetSize: Qt.size(Math.ceil(window.width * window.modelData.devicePixelRatio), Math.ceil(window.height * window.modelData.devicePixelRatio))
             readonly property string desiredPath: WallpaperService.showing
             readonly property Image front: window.frontIsA ? layerA : layerB
             readonly property Image back: window.frontIsA ? layerB : layerA
             readonly property real revealRadius: Math.hypot(window.width / 2, window.height) + 2
-
-            property bool frontIsA: true
-            property real revealProgress: 0 
 
             screen: window.modelData
             color: Theme.color.m3background

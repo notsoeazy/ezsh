@@ -1,9 +1,10 @@
 pragma Singleton
 
-import Quickshell
 import QtQuick
+import Quickshell
 
 Singleton {
+    id: root
 
     readonly property Bar bar: Bar {}
     readonly property Border border: Border {}
@@ -13,7 +14,7 @@ Singleton {
     readonly property Wallpaper wallpaper: Wallpaper {}
     readonly property NightLight nightLight: NightLight {}
     readonly property Session session: Session {}
-
+    readonly property Capture capture: Capture {}
 
     component Bar: QtObject {
         readonly property bool symmetricSides: true
@@ -35,7 +36,7 @@ Singleton {
         readonly property int borderGap: 10
         readonly property string dashboardMode: "auto"
     }
-    
+
     component Border: QtObject {
         readonly property int thickness: 10
         readonly property int radius: 20
@@ -54,6 +55,7 @@ Singleton {
         readonly property bool showKeepAwake: true
         readonly property bool showPowerProfile: true
         readonly property bool showConservationMode: true
+        readonly property bool showCapture: true
         readonly property int levelTimeout: 1500
         readonly property int messageTimeout: 2500
         readonly property bool showOverViews: true
@@ -85,5 +87,12 @@ Singleton {
         readonly property var lock: ["loginctl", "lock-session"]
         readonly property var reboot: ["systemctl", "reboot"]
         readonly property var poweroff: ["systemctl", "poweroff"]
+    }
+
+    component Capture: QtObject {
+        readonly property string screenshotDirectory: "~/Pictures/Screenshots"
+        readonly property string recordingDirectory: "~/Videos/Recordings"
+        readonly property int recordFrameRate: 60
+        readonly property var annotationColors: ["#f43f5e", "#f59e0b", "#22c55e", "#3b82f6", "#ffffff", "#18181b"]
     }
 }

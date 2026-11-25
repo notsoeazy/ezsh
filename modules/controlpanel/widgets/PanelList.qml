@@ -79,20 +79,22 @@ Flickable {
                         }
 
                         ListItem {
+                            id: row
+
                             required property var modelData
                             required property int index
 
                             width: column.width
-                            first: index === 0
-                            last: index === rows.count - 1
-                            icon: root.leadingIcon(modelData)
-                            headline: root.headline(modelData)
-                            supportingText: root.supportingText(modelData)
-                            trailingIcon: root.trailingIcon(modelData)
-                            selected: root.isSelected(modelData)
+                            first: row.index === 0
+                            last: row.index === rows.count - 1
+                            icon: root.leadingIcon(row.modelData)
+                            headline: root.headline(row.modelData)
+                            supportingText: root.supportingText(row.modelData)
+                            trailingIcon: root.trailingIcon(row.modelData)
+                            selected: root.isSelected(row.modelData)
                             radio: root.radios
-                            checked: root.radios && root.isChecked(modelData)
-                            onClicked: root.activated(modelData)
+                            checked: root.radios && root.isChecked(row.modelData)
+                            onClicked: root.activated(row.modelData)
                         }
                     }
                 }

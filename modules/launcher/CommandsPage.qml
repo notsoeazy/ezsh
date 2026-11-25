@@ -2,6 +2,8 @@ import QtQuick
 
 import "../../utils/fuzzysort.mjs" as Fuzzysort
 
+import qs.modules.launcher.widgets
+
 LauncherPage {
     id: root
 
@@ -35,9 +37,11 @@ LauncherPage {
 
     row: Component {
         EntryRow {
-            title: modelData.title
-            subtitle: modelData.subtitle
-            symbol: modelData.symbol
+            id: entryRow
+
+            title: entryRow.modelData.title
+            subtitle: entryRow.modelData.subtitle
+            symbol: entryRow.modelData.symbol
         }
     }
 

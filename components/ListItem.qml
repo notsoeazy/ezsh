@@ -48,7 +48,7 @@ Item {
         topRightRadius: root.topRadius
         bottomLeftRadius: root.bottomRadius
         bottomRightRadius: root.bottomRadius
-        border.width: root.activeFocus ? 2 : 0
+        border.width: root.activeFocus ? Tokens.stroke.thick : 0
         border.color: Theme.color.m3secondary
 
         StateLayer {

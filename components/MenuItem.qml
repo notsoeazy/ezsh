@@ -41,7 +41,7 @@ Item {
         anchors.fill: parent
         radius: root.dense ? Tokens.radius.md : Tokens.radius.lg
         color: root.selected ? Theme.color.m3tertiaryContainer : Qt.alpha(Theme.color.m3tertiaryContainer, 0)
-        border.width: root.activeFocus ? 2 : 0
+        border.width: root.activeFocus ? Tokens.stroke.thick : 0
         border.color: Theme.color.m3secondary
 
         StateLayer {

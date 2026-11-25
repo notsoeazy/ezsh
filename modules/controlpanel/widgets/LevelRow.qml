@@ -14,7 +14,7 @@ Item {
     property bool sliderEnabled: true
 
     signal valueRequested(real value)
-    signal stepRequested(real direction)
+    signal stepRequested(int direction)
     signal buttonClicked()
     signal buttonSecondaryClicked()
 

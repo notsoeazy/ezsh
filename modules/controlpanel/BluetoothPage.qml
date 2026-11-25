@@ -4,6 +4,7 @@ import qs
 import qs.themes
 import qs.services
 import qs.components
+import qs.modules.controlpanel.widgets
 
 PanelPage {
     id: root

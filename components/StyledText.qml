@@ -1,4 +1,5 @@
 import QtQuick
+
 import qs
 import qs.themes
 
@@ -19,9 +20,9 @@ Text {
 
     color: Theme.color.m3onBackground
 
-    elide: elideText ? Text.ElideRight : Text.ElideNone
-    wrapMode: wrapText ? Text.Wrap : Text.NoWrap
-    maximumLineCount: wrapText ? 0 : 1
+    elide: root.elideText ? Text.ElideRight : Text.ElideNone
+    wrapMode: root.wrapText ? Text.Wrap : Text.NoWrap
+    maximumLineCount: root.wrapText ? 0 : 1
 
     Behavior on font.pixelSize {
         enabled: root.animateFontSize

@@ -1,8 +1,10 @@
 import QtQuick
+
 import qs
-import qs.themes
 
 ColorAnimation {
+    id: root
+
     duration: Tokens.animDuration.effects
     easing.type: Easing.OutCubic
 }

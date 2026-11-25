@@ -8,17 +8,17 @@ import Quickshell.Networking
 Singleton {
     id: root
 
-    readonly property var devices: Networking.devices.values
+    property string wiredConnectionName: ""
+    property string failedNetwork: ""
+    property int failReason: ConnectionFailReason.Unknown
+    property string newProfileNetwork: ""
+    property string activeWifiSsid: ""
 
-    // The connected wired device (a dock can add a second one), or null.
+    readonly property var devices: Networking.devices.values
     readonly property var wiredDevice: root.devices.find(d => d.type === DeviceType.Wired && d.connected) ?? null
     readonly property bool wiredConnected: root.wiredDevice !== null
-    // NetworkManager's connection name ("Wired connection 1"); Quickshell only knows the interface.
-    property string wiredConnectionName: ""
     readonly property string wiredName: root.wiredConnectionName || root.wiredDevice?.name || "Ethernet"
     readonly property int wiredDeviceState: root.wiredDevice?.state ?? 0
-    onWiredDeviceChanged: root.lookUpWiredName()
-    onWiredDeviceStateChanged: root.lookUpWiredName()
     readonly property var wifiDevice: root.devices.find(d => d.type === DeviceType.Wifi) ?? null
     readonly property bool wifiAvailable: root.wifiDevice !== null
     readonly property bool wifiEnabled: Networking.wifiEnabled
@@ -32,14 +32,10 @@ Singleton {
         return networks.find(n => n.connected) ?? networks.find(n => n.name === root.activeWifiSsid) ?? null;
     }
 
-    // Named networks in range, the connected one first, then by signal.
     readonly property var wifiNetworks: (root.wifiDevice?.networks.values ?? []).filter(n => n.name.length > 0)
         .sort((a, b) => ((b === root.connectedWifiNetwork) - (a === root.connectedWifiNetwork)) || (b.signalStrength - a.signalStrength))
-    // The rest of wifiNetworks, split by whether NetworkManager has a profile for them.
     readonly property var savedWifiNetworks: root.wifiNetworks.filter(n => n !== root.connectedWifiNetwork && n.known)
     readonly property var nearbyWifiNetworks: root.wifiNetworks.filter(n => n !== root.connectedWifiNetwork && !n.known)
-
-    // 0..1
     readonly property real wifiSignalStrength: root.connectedWifiNetwork?.signalStrength ?? 0
 
     readonly property string wifiIcon: {
@@ -55,28 +51,10 @@ Singleton {
     readonly property string wifiStatus: !root.wifiAvailable ? "Unavailable" : !root.wifiEnabled ? "Off"
         : root.connectedWifiNetwork ? root.connectedWifiNetwork.name : "Not connected"
 
-    // The name of the last network that refused to connect, and why (ConnectionFailReason); cleared on the next attempt.
-    property string failedNetwork: ""
-    property int failReason: ConnectionFailReason.Unknown
-    // The failure was the supplicant rejecting the key, i.e. most likely a wrong password.
-    // (WifiClientDisconnected is left out: it is also what a dropped connection reports.)
     readonly property bool failedAuth: root.failedNetwork !== "" && [ConnectionFailReason.NoSecrets, ConnectionFailReason.WifiClientFailed,
         ConnectionFailReason.WifiAuthTimeout].includes(root.failReason)
 
-    // A network whose saved profile was created by the current password attempt. connectWithPsk saves
-    // the profile before trying it, so a wrong password would otherwise be kept and reused silently.
-    property string newProfileNetwork: ""
-
-    // Network.connected stays false on quickshell 0.3.2-git even while the
-    // device is connected, so resolve the active SSID from NetworkManager.
-    property string activeWifiSsid: ""
     readonly property int wifiDeviceState: root.wifiDevice?.state ?? 0
-    onWifiDeviceStateChanged: ssidLookup.running = true
-    // Once the new profile works it is the user's saved network, never to be forgotten on a later drop.
-    onConnectedWifiNetworkChanged: {
-        if (root.connectedWifiNetwork?.name === root.newProfileNetwork)
-            root.newProfileNetwork = "";
-    }
 
     // Signal strength 0..1 to an icon.
     function signalIcon(strength) {
@@ -148,6 +126,15 @@ Singleton {
         wiredNameLookup.running = true;
     }
 
+    onWiredDeviceChanged: root.lookUpWiredName()
+    onWiredDeviceStateChanged: root.lookUpWiredName()
+    onWifiDeviceStateChanged: ssidLookup.running = true
+    // Once the new profile works it is the user's saved network, never to be forgotten on a later drop.
+    onConnectedWifiNetworkChanged: {
+        if (root.connectedWifiNetwork?.name === root.newProfileNetwork)
+            root.newProfileNetwork = "";
+    }
+
     Process {
         id: wiredNameLookup
 
@@ -181,12 +168,14 @@ Singleton {
         }
 
         Connections {
+            id: networkConnections
+
             required property var modelData
 
-            target: modelData
+            target: networkConnections.modelData
 
             function onConnectionFailed(reason) {
-                root.handleConnectionFailed(modelData, reason);
+                root.handleConnectionFailed(networkConnections.modelData, reason);
             }
         }
     }

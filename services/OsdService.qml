@@ -9,6 +9,14 @@ import qs.config
 Singleton {
     id: root
 
+    property bool startupDelayElapsed: false
+    property bool showing: false
+    property string currentKind: ""
+    property var payload: ({})
+    property bool sliderPressed: false
+    // The focused bar can't show the OSD right now (a view covers it); a held message keeps its full time for when it can.
+    property bool held: false
+
     // One row per kind. Levels read and set a 0..1 value on their service; messages build their
     // icon and text from the payload. `enabled` is the kind's Config.osd switch.
     readonly property var kindDefinitions: ({
@@ -65,16 +73,13 @@ Singleton {
             enabled: () => Config.osd.showKeepAwake,
             icon: () => "coffee",
             text: payload => payload.enabled ? "Keep awake on" : "Keep awake off"
+        },
+        "capture": {
+            enabled: () => Config.osd.showCapture,
+            icon: payload => payload.icon,
+            text: payload => payload.text
         }
     })
-
-    property bool startupDelayElapsed: false
-    property bool showing: false
-    property string currentKind: ""
-    property var payload: ({})
-    property bool sliderPressed: false
-    // The focused bar can't show the OSD right now (a view covers it); a held message keeps its full time for when it can.
-    property bool held: false
 
     readonly property var currentDefinition: root.kindDefinitions[root.currentKind] ?? null
     readonly property bool showsLevel: root.currentDefinition?.isLevel === true

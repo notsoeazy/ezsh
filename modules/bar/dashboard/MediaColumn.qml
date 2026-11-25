@@ -9,17 +9,16 @@ import qs.components
 Column {
     id: root
 
+    property real shownProgress: MediaService.available ? 1 : 0
+    property string shownTitle: ""
+    property string shownArtist: ""
+    property string shownArtUrl: ""
+
     readonly property int artSize: 40
     readonly property int glyphSpaceBelow: Tokens.spacing.xxs
     readonly property real visualCenterY: (root.implicitHeight - root.glyphSpaceBelow) / 2
     readonly property int positionPollInterval: 1000
     readonly property int seekStep: 5
-    // 0..1, cross-fades the player's content with its placeholders.
-    property real shownProgress: MediaService.available ? 1 : 0
-    // The last player's details, kept while the column fades out after it leaves.
-    property string shownTitle: ""
-    property string shownArtist: ""
-    property string shownArtUrl: ""
 
     spacing: Tokens.spacing.xxs
 

@@ -9,6 +9,8 @@ import qs.components
 Item {
     id: root
 
+    property int selectedIndex: 0
+
     readonly property int contentPadding: Tokens.spacing.md
     readonly property int buttonWidth: 72
     readonly property int buttonHeight: 56
@@ -35,8 +37,6 @@ Item {
         }
     ]
     readonly property bool coversOsd: false
-
-    property int selectedIndex: 0
 
     signal closeRequested()
 

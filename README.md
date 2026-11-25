@@ -25,11 +25,11 @@ November 22, 2026
 - [x] Bar Default/Expanded
 - [x] OSD Slider/Messages
 - [x] Services
-
 November 23, 2026
 - [x] App Launcher (apps, >commands, clipboard, symbols)
 - [x] Wallpaper Selector
-
 November 24, 2026
 - [x] Control Panel
 - [x] Expanded bar 2nd row - media player, compact notifications, and system tray
+November 25, 2026
+- [x] Screen capture (region/window/screen, annotation editor) and screen recording

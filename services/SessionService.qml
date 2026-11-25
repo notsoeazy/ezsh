@@ -37,7 +37,7 @@ Singleton {
 
         onExited: code => {
             if (code !== 0)
-                console.warn(`SessionService: ${runner.command.join(" ")} exited with code ${code}`);
+                console.warn("SessionService:", runner.command.join(" "), "failed with code", code);
         }
     }
 }

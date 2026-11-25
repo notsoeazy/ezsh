@@ -8,14 +8,14 @@ Item {
 
     property bool checked: false
 
+    // 0 = off, 1 = on; drives the handle's position and size together.
+    property real progress: root.checked ? 1 : 0
+
     readonly property int trackWidth: 52
     readonly property int trackHeight: 32
     readonly property int handleOff: 16
     readonly property int handleOn: 24
     readonly property int handlePressed: 28
-
-    // 0 = off, 1 = on; drives the handle's position and size together.
-    property real progress: root.checked ? 1 : 0
 
     signal toggled()
 
@@ -47,7 +47,7 @@ Item {
         anchors.fill: parent
         radius: Tokens.radius.full
         color: root.checked ? Theme.color.m3primary : Theme.color.m3surfaceContainerHighest
-        border.width: 2
+        border.width: Tokens.stroke.thick
         border.color: Qt.alpha(root.activeFocus ? Theme.color.m3secondary : Theme.color.m3outline, root.activeFocus ? 1 : Math.max(0, Math.min(1, 1 - root.progress)))
     }
 

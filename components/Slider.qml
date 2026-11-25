@@ -7,18 +7,17 @@ import qs.themes
 Item {
     id: root
 
-    readonly property bool pressed: mouseArea.pressed
-
     property real value: 0
     property real displayedValue: root.value
     property string icon: ""
     property bool interactive: true
 
-    signal valueRequested(real value)
-    signal stepRequested(real direction)
-
+    readonly property bool pressed: mouseArea.pressed
     readonly property int defaultWidth: 224
     readonly property int defaultHeight: 28
+
+    signal valueRequested(real value)
+    signal stepRequested(int direction)
 
     implicitWidth: root.defaultWidth
     implicitHeight: root.defaultHeight
@@ -26,6 +25,15 @@ Item {
     Accessible.role: Accessible.Slider
     Accessible.name: root.icon
     Accessible.description: `${Math.round(root.value * 100)}%`
+
+    Behavior on displayedValue {
+        enabled: !mouseArea.pressed
+
+        Anim {
+            duration: Tokens.animDuration.spatialFast
+            easing.type: Easing.OutBack
+        }
+    }
 
     ClippingRectangle {
         anchors.fill: parent
@@ -67,14 +75,14 @@ Item {
     WheelArea {
         id: mouseArea
 
-        function valueFromX(x) {
-            return Math.max(0, Math.min(1, x / root.width));
-        }
-
         anchors.fill: parent
         acceptedButtons: Qt.LeftButton
         enabled: root.interactive
         cursorShape: Qt.PointingHandCursor
+
+        function valueFromX(x) {
+            return Math.max(0, Math.min(1, x / root.width));
+        }
 
         onPressed: event => root.valueRequested(mouseArea.valueFromX(event.x))
         onPositionChanged: event => {
@@ -82,14 +90,5 @@ Item {
                 root.valueRequested(mouseArea.valueFromX(event.x));
         }
         onStepped: direction => root.stepRequested(direction)
-    }
-
-    Behavior on displayedValue {
-        enabled: !mouseArea.pressed
-
-        Anim {
-            duration: Tokens.animDuration.spatialFast
-            easing.type: Easing.OutBack
-        }
     }
 }

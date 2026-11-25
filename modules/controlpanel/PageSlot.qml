@@ -12,10 +12,10 @@ Loader {
     // The panel is open (not closing).
     required property bool open
 
+    property real progress: root.current ? 1 : 0
+
     readonly property bool current: root.currentPage === root.name
     readonly property int slideDistance: Tokens.spacing.xxxl
-
-    property real progress: root.current ? 1 : 0
 
     signal pageRequested(string name)
     signal backRequested()

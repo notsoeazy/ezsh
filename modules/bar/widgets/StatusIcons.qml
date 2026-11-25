@@ -7,12 +7,16 @@ import qs.components
 
 Row {
     id: root
-    spacing: -2
 
     // The notification count; the expanded bar shows its own summary instead.
     property bool showNotificationCount: true
 
+    // Icon buttons pad their glyphs; pull them closer so the row reads as one group.
+    readonly property int iconOverlap: 2
+
     signal navigateRequested(string view, string page)
+
+    spacing: -root.iconOverlap
 
     Reveal {
         anchors.verticalCenter: parent.verticalCenter

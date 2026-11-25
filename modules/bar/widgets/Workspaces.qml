@@ -10,15 +10,15 @@ import qs.components
 Item {
     id: root
 
+    property string lastSpecialName: ""
+    property int displayedPageOffset: 0
+
     readonly property var monitor: HyprlandService.monitorFor(QsWindow.window?.screen)
     readonly property int activeWorkspaceId: root.monitor?.activeWorkspace?.id ?? 1
     readonly property int pageOffset: HyprlandService.pageOffsetOf(root.activeWorkspaceId)
     readonly property string activeSpecialName: HyprlandService.specialNameOn(root.monitor?.name ?? "")
 
     readonly property bool showingSpecial: root.activeSpecialName !== ""
-    property string lastSpecialName: ""
-    property int displayedPageOffset: 0
-
     readonly property int activeWidth: 22
 
     readonly property real regularWidth: HyprlandService.workspacesPerPage * Tokens.bar.workspaceDotSize + (HyprlandService.workspacesPerPage - 1) * Tokens.bar.workspaceSpacing + root.activeWidth - Tokens.bar.workspaceDotSize
@@ -26,12 +26,6 @@ Item {
 
     implicitWidth: root.showingSpecial ? root.specialWidth : root.regularWidth
     implicitHeight: Tokens.bar.iconButtonSize
-
-    Behavior on implicitWidth {
-        Anim {
-            duration: Tokens.animDuration.spatialFast
-        }
-    }
 
     function rememberSpecialName() {
         if (root.activeSpecialName)
@@ -48,6 +42,12 @@ Item {
     onPageOffsetChanged: {
         pageSlide.direction = root.pageOffset > root.displayedPageOffset ? 1 : -1;
         pageSlide.restart();
+    }
+
+    Behavior on implicitWidth {
+        Anim {
+            duration: Tokens.animDuration.spatialFast
+        }
     }
 
     StyledRectangle {

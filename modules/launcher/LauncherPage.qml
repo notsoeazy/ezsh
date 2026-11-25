@@ -3,6 +3,8 @@ import QtQuick
 import qs
 
 QtObject {
+    id: root
+
     property string placeholder: "Search"
     property string icon: "search"
     property string emptyText: "No results"

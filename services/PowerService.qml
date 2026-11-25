@@ -9,6 +9,11 @@ import Quickshell.Services.UPower
 Singleton {
     id: root
 
+    property bool conservationAvailable: false
+    property bool conservationMode: false
+    property bool conservationBusy: false
+    property bool conservationError: false
+
     readonly property var profiles: [
         {
             value: PowerProfile.PowerSaver,
@@ -31,11 +36,6 @@ Singleton {
 
     readonly property var battery: UPower.devices.values.find(d => d.isLaptopBattery && d.isPresent) ?? null
     readonly property string batteryPath: root.battery ? "/org/freedesktop/UPower/devices/battery_" + root.battery.nativePath.replace(/[^A-Za-z0-9_]/g, "_") : ""
-
-    property bool conservationAvailable: false
-    property bool conservationMode: false
-    property bool conservationBusy: false
-    property bool conservationError: false
 
     function setProfile(value) {
         if (!root.profiles.some(p => p.value === value))

@@ -1,63 +1,64 @@
 import QtQuick
+import QtQuick.Layouts
 
 import qs
 import qs.themes
-import qs.components
 
-Item {
+// A row of shortcuts: hints: [{ keys: ["ctrl", "z"], label: "undo" }, "spacer", ...]. A "spacer"
+// takes the free width, so hints after it sit at the right edge.
+RowLayout {
     id: root
 
     property var hints: []
-    property string escapeLabel: "close"
 
-    readonly property int hintHeight: 20
+    spacing: Tokens.spacing.md
 
-    implicitHeight: root.hintHeight
+    Repeater {
+        model: root.hints
 
-    Hint {
-        anchors.left: parent.left
-        anchors.verticalCenter: parent.verticalCenter
-        key: "esc"
-        label: root.escapeLabel
-    }
+        Item {
+            id: entry
 
-    Row {
-        anchors.right: parent.right
-        anchors.verticalCenter: parent.verticalCenter
-        spacing: Tokens.spacing.md
+            required property var modelData
 
-        Repeater {
-            model: root.hints
+            readonly property bool isSpacer: entry.modelData === "spacer"
 
-            Hint {
-                required property var modelData
+            Layout.fillWidth: entry.isSpacer
+            implicitWidth: entry.isSpacer ? 0 : hint.implicitWidth
+            implicitHeight: hint.implicitHeight
 
-                key: modelData.key
-                label: modelData.label
+            Row {
+                id: hint
+
+                visible: !entry.isSpacer
+                spacing: Tokens.spacing.xs
+
+                Row {
+                    anchors.verticalCenter: parent.verticalCenter
+                    spacing: Tokens.spacing.xxs
+
+                    Repeater {
+                        model: entry.isSpacer ? [] : entry.modelData.keys
+
+                        KeyCap {
+                            id: keyCap
+
+                            required property string modelData
+
+                            text: keyCap.modelData
+                        }
+                    }
+                }
+
+                StyledText {
+                    anchors.verticalCenter: parent.verticalCenter
+                    animateFontSize: false
+                    animateTextChange: true
+                    text: entry.isSpacer ? "" : entry.modelData.label
+                    font.pixelSize: Tokens.fontSize.xs
+                    color: Theme.color.m3onSurfaceVariant
+                }
             }
-        }
-    }
-
-    component Hint: Row {
-        property string key: ""
-        property string label: ""
-
-        spacing: Tokens.spacing.xxs
-
-        StyledText {
-            animateFontSize: false
-            text: parent.key
-            font.pixelSize: Tokens.fontSize.xs
-            font.weight: Tokens.font.semibold
-            color: Theme.color.m3onSurface
-        }
-
-        StyledText {
-            animateFontSize: false
-            animateTextChange: true
-            text: parent.label
-            font.pixelSize: Tokens.fontSize.xs
-            color: Theme.color.m3onSurfaceVariant
         }
     }
 }

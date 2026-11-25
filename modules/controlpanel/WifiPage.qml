@@ -4,17 +4,26 @@ import qs
 import qs.themes
 import qs.services
 import qs.components
+import qs.modules.controlpanel.widgets
 
 PanelPage {
     id: root
-
-    readonly property bool scanning: root.shown && NetworkService.wifiEnabled
-    readonly property bool showsStatus: root.joining || NetworkService.failedNetwork !== ""
 
     property var pendingNetwork: null
     property bool joining: false
     property string statusText: ""
     property string pendingName: ""
+
+    readonly property bool scanning: root.shown && NetworkService.wifiEnabled
+    readonly property bool showsStatus: root.joining || NetworkService.failedNetwork !== ""
+
+    title: "Wi-Fi"
+    accessory: Switch {
+        checked: NetworkService.wifiEnabled
+        enabled: NetworkService.wifiAvailable
+        Accessible.name: "Wi-Fi"
+        onToggled: NetworkService.setWifiEnabled(!NetworkService.wifiEnabled)
+    }
 
     function activate(network) {
         if (network === NetworkService.connectedWifiNetwork) {
@@ -44,15 +53,8 @@ PanelPage {
         root.forceActiveFocus();
     }
 
-    title: "Wi-Fi"
-    accessory: Switch {
-        checked: NetworkService.wifiEnabled
-        enabled: NetworkService.wifiAvailable
-        Accessible.name: "Wi-Fi"
-        onToggled: NetworkService.setWifiEnabled(!NetworkService.wifiEnabled)
-    }
-
     onScanningChanged: NetworkService.setScanning(root.scanning)
+    Component.onDestruction: NetworkService.setScanning(false)
 
     Binding {
         when: root.showsStatus
@@ -71,7 +73,6 @@ PanelPage {
         value: root.pendingNetwork?.name ?? ""
         restoreMode: Binding.RestoreNone
     }
-    Component.onDestruction: NetworkService.setScanning(false)
 
     Reveal {
         id: wifiNotice

@@ -7,6 +7,10 @@ import qs.components
 Item {
     id: root
 
+    // ViewService.page while open, kept while the panel fades out so the page doesn't change under it.
+    property string pageName: "home"
+    property real contentHeight: root.page?.implicitHeight ?? 0
+
     readonly property int panelWidth: 440
     readonly property int contentPadding: Tokens.spacing.md
     // Each page is loaded only while shown (PageSlot).
@@ -26,10 +30,6 @@ Item {
     readonly property bool coversOsd: true
     // A Menu hangs outside the body; Bar takes input on the whole window while this is true.
     readonly property bool popupOpen: root.page?.overlayOpen === true
-
-    // ViewService.page while open, kept while the panel fades out so the page doesn't change under it.
-    property string pageName: "home"
-    property real contentHeight: root.page?.implicitHeight ?? 0
 
     signal closeRequested()
     signal navigateRequested(string view)
@@ -87,11 +87,13 @@ Item {
             model: root.pageNames
 
             PageSlot {
+                id: pageSlot
+
                 required property string modelData
 
                 width: pageArea.width
-                name: modelData
-                source: root.pageFiles[modelData]
+                name: pageSlot.modelData
+                source: root.pageFiles[pageSlot.modelData]
                 currentPage: root.pageName
                 open: root.open
                 onPageRequested: name => root.openPage(name)

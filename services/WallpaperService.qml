@@ -5,21 +5,10 @@ import Quickshell
 import Quickshell.Io
 
 import qs.config
+import qs.utils
 
 Singleton {
     id: root
-
-    readonly property string home: Quickshell.env("HOME")
-    readonly property string directory: Config.wallpaper.directory.replace(/^~(?=\/|$)/, root.home)
-    readonly property int thumbnailWidth: 480
-    readonly property int thumbnailHeight: 270
-    readonly property string current: !root.stateRead ? "" : root.images.includes(root.saved) ? root.saved : (root.images[0] ?? "")
-    readonly property string showing: root.preview || root.current
-
-    // Qt's default image allocation limit; larger images get a screen-sized copy from the script.
-    readonly property real decodeLimit: 256 * 1024 * 1024
-    // Bytes per decoded pixel: Qt decodes 16-bit PNGs to 8 (RGBA64), so assume the worst case.
-    readonly property int decodeBytesPerPixel: 8
 
     property list<string> images: []
     property var sizes: ({})
@@ -32,9 +21,16 @@ Singleton {
     // A thumbnail run was asked for while one was busy; run again when it ends (new images since).
     property bool thumbnailRerunQueued: false
 
-    function fileUrl(path) {
-        return "file://" + path.split("/").map(encodeURIComponent).join("/");
-    }
+    readonly property string directory: FilePaths.absolutePath(Config.wallpaper.directory)
+    readonly property int thumbnailWidth: 480
+    readonly property int thumbnailHeight: 270
+    readonly property string current: !root.stateRead ? "" : root.images.includes(root.saved) ? root.saved : (root.images[0] ?? "")
+    readonly property string showing: root.preview || root.current
+
+    // Qt's default image allocation limit; larger images get a screen-sized copy from the script.
+    readonly property real decodeLimit: 256 * 1024 * 1024
+    // Bytes per decoded pixel: Qt decodes 16-bit PNGs to 8 (RGBA64), so assume the worst case.
+    readonly property int decodeBytesPerPixel: 8
 
     function setPreview(path) {
         if (root.images.includes(path))
@@ -66,7 +62,7 @@ Singleton {
         if (!path)
             return "";
         if (!root.needsFit(path))
-            return root.fileUrl(path);
+            return FilePaths.toFileUrl(path);
         return root.fitted[root.fitKey(path, size)] ?? "";
     }
 
@@ -94,7 +90,6 @@ Singleton {
             scanner.running = true;
     }
 
-
     function makeThumbnails() {
         if (thumbnailer.running) {
             root.thumbnailRerunQueued = true;
@@ -116,7 +111,7 @@ Singleton {
     FileView {
         id: stateFile
 
-        path: `${Quickshell.env("XDG_STATE_HOME") || root.home + "/.local/state"}/ezsh/wallpaper`
+        path: `${FilePaths.state}/wallpaper`
         atomicWrites: true
         printErrors: false
 
@@ -151,7 +146,7 @@ Singleton {
 
         onExited: code => {
             if (code !== 0)
-                console.warn("WallpaperService: scanning", root.directory, "failed", code);
+                console.warn("WallpaperService: scanning", root.directory, "failed with code", code);
             else
                 root.makeThumbnails();
         }
@@ -164,7 +159,7 @@ Singleton {
             onRead: line => {
                 try {
                     const [path, thumbnail] = JSON.parse(line);
-                    const url = thumbnail ? root.fileUrl(thumbnail) : "";
+                    const url = thumbnail ? FilePaths.toFileUrl(thumbnail) : "";
                     if (root.thumbnails[path] !== url)
                         root.thumbnails = Object.assign({}, root.thumbnails, {
                             [path]: url
@@ -179,7 +174,7 @@ Singleton {
 
         onExited: code => {
             if (code !== 0)
-                console.warn("WallpaperService: making thumbnails failed", code);
+                console.warn("WallpaperService: making thumbnails failed with code", code);
             if (root.thumbnailRerunQueued) {
                 root.thumbnailRerunQueued = false;
                 Qt.callLater(root.makeThumbnails);
@@ -196,7 +191,7 @@ Singleton {
             onStreamFinished: {
                 try {
                     root.fitted = Object.assign({}, root.fitted, {
-                        [fitter.key]: root.fileUrl(JSON.parse(text))
+                        [fitter.key]: FilePaths.toFileUrl(JSON.parse(text))
                     });
                 } catch (error) {}
             }

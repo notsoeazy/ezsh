@@ -13,6 +13,9 @@ Menu {
     readonly property var shownOpener: root.submenuPath.length === 0 ? topOpener
         : submenuOpeners.count >= root.submenuPath.length ? submenuOpeners.objectAt(root.submenuPath.length - 1) : null
 
+    leftAligned: true
+    clip: true
+
     // Shows another level: the entries fade in while the popup eases to their size.
     function showPath(path) {
         root.submenuPath = path;
@@ -26,10 +29,6 @@ Menu {
         root.submenuPath = [];
         root.openBelow(anchor);
     }
-
-    leftAligned: true
-    // Holds the old level's overflow in while the popup shrinks to a shorter one.
-    clip: true
 
     onClosed: {
         root.trayItem = null;
@@ -78,9 +77,11 @@ Menu {
         }
 
         QsMenuOpener {
+            id: submenuOpener
+
             required property var modelData
 
-            menu: modelData
+            menu: submenuOpener.modelData
         }
     }
 
@@ -109,12 +110,10 @@ Menu {
                 Item {
                     implicitHeight: Tokens.spacing.xs * 2
 
-                    StyledRectangle {
+                    Divider {
                         anchors.verticalCenter: parent.verticalCenter
                         x: Tokens.spacing.sm
                         width: parent.width - Tokens.spacing.sm * 2
-                        height: 1
-                        color: Theme.color.m3outlineVariant
                     }
                 }
             }

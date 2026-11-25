@@ -8,24 +8,16 @@ import qs.components
 Item {
     id: root
 
-    readonly property int pageSize: 2
-    readonly property int rowHeight: 20
-    readonly property int rowGap: Tokens.spacing.xxs
-    readonly property int appIconSize: Tokens.icon.sm
-    readonly property int dotSize: 4
-    // The apps listed; the last ones are kept while the list fades out after they all leave.
     property var apps: []
 
     property real shownProgress: NotificationService.apps.length > 0 ? 1 : 0
     property real dotsProgress: NotificationService.apps.length > root.pageSize ? 1 : 0
 
-    Binding {
-        when: NotificationService.apps.length > 0
-        target: root
-        property: "apps"
-        value: NotificationService.apps
-        restoreMode: Binding.RestoreNone
-    }
+    readonly property int pageSize: 2
+    readonly property int rowHeight: 20
+    readonly property int rowGap: Tokens.spacing.xxs
+    readonly property int appIconSize: Tokens.icon.sm
+    readonly property int dotSize: 4
 
     Behavior on shownProgress {
         Anim {
@@ -37,6 +29,14 @@ Item {
         Anim {
             duration: Tokens.animDuration.effectsSlow
         }
+    }
+
+    Binding {
+        when: NotificationService.apps.length > 0
+        target: root
+        property: "apps"
+        value: NotificationService.apps
+        restoreMode: Binding.RestoreNone
     }
 
     Column {

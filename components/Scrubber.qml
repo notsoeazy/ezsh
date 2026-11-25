@@ -23,7 +23,6 @@ Item {
     readonly property bool pressed: mouseArea.pressed
     readonly property real shownValue: Math.max(0, Math.min(1, root.pressed || root.settling ? root.dragValue : root.animatedValue))
 
-
     signal seekRequested(real value)
     signal stepRequested(int direction)
 
@@ -94,15 +93,15 @@ Item {
     WheelArea {
         id: mouseArea
 
-        function valueFromX(x) {
-            return Math.max(0, Math.min(1, x / root.width));
-        }
-
         anchors.fill: parent
         acceptedButtons: Qt.LeftButton
         enabled: root.interactive
         cursorShape: Qt.PointingHandCursor
         preventStealing: true
+
+        function valueFromX(x) {
+            return Math.max(0, Math.min(1, x / root.width));
+        }
 
         onPressed: event => {
             root.settling = false;

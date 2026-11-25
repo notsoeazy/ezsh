@@ -38,19 +38,21 @@ PanelPage {
             model: PowerService.profiles
 
             Button {
+                id: modeButton
+
                 required property var modelData
                 required property int index
 
-                readonly property bool chosen: modelData.value === PowerService.profile
+                readonly property bool chosen: modeButton.modelData.value === PowerService.profile
 
                 width: modes.buttonWidth
                 buttonHeight: root.modeButtonHeight
-                icon: modelData.icon
-                text: modelData.label
-                checked: chosen
-                startRadius: chosen || index === 0 ? modes.pill : Tokens.radius.sm
-                endRadius: chosen || index === PowerService.profiles.length - 1 ? modes.pill : Tokens.radius.sm
-                onClicked: PowerService.setProfile(modelData.value)
+                icon: modeButton.modelData.icon
+                text: modeButton.modelData.label
+                checked: modeButton.chosen
+                startRadius: modeButton.chosen || modeButton.index === 0 ? modes.pill : Tokens.radius.sm
+                endRadius: modeButton.chosen || modeButton.index === PowerService.profiles.length - 1 ? modes.pill : Tokens.radius.sm
+                onClicked: PowerService.setProfile(modeButton.modelData.value)
             }
         }
     }

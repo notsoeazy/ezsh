@@ -4,6 +4,7 @@ import qs
 import qs.themes
 import qs.services
 import qs.components
+import qs.modules.controlpanel.widgets
 
 // The panel's first page: clock and battery, the quick toggles, brightness and volume, the capture
 // buttons and the notification count. Right-click the night light toggle for its page.
@@ -12,40 +13,28 @@ PanelPage {
 
     readonly property int headerButtonSize: 36
     readonly property int showAllHeight: 32
-    readonly property var recordModes: [
+    readonly property var recordSoundOptions: [
         {
-            name: "screen",
-            label: "Record",
-            title: "Screen",
-            icon: "desktop_windows"
+            sound: false,
+            title: "Screen only",
+            icon: "volume_off"
         },
         {
-            name: "sound",
-            label: "Record + sound",
+            sound: true,
             title: "Screen with sound",
             icon: "volume_up"
-        },
-        {
-            name: "region",
-            label: "Record area",
-            title: "Area",
-            icon: "crop"
         }
     ]
-    readonly property var recordMode: root.recordModes.find(mode => mode.name === root.recordModeName) ?? root.recordModes[0]
-
-    // shortcut: the capture buttons and mode are UI only, wire them to a capture service (grim + slurp, gpu-screen-recorder) when one exists.
-    property string recordModeName: "screen"
 
     // Asks to leave the panel for another view (the session menu).
     signal navigateRequested(string view)
 
+    showHeader: false
+    overlayOpen: recordMenu.shown
+
     function closeOverlay() {
         recordMenu.close();
     }
-
-    showHeader: false
-    overlayOpen: recordMenu.shown
 
     // The menu lives on the window's overlay, so it would outlast the page or the panel fading out.
     onShownChanged: {
@@ -201,6 +190,7 @@ PanelPage {
             height: parent.height
             icon: "screenshot_region"
             text: "Screenshot"
+            onClicked: CaptureService.start("screenshot")
         }
 
         SplitButton {
@@ -209,9 +199,10 @@ PanelPage {
             x: parent.width - width
             width: (parent.width - Tokens.spacing.sm) / 2
             height: parent.height
-            icon: "videocam"
-            text: root.recordMode.label
+            icon: CaptureService.recording ? "stop_circle" : "videocam"
+            text: CaptureService.recording ? "Stop" : CaptureService.recordAudio ? "Record + sound" : "Record"
             menuOpen: recordMenu.shown
+            onClicked: CaptureService.toggleRecording()
             onMenuRequested: recordMenu.toggle(recordButton.chevron)
         }
     }
@@ -262,16 +253,18 @@ PanelPage {
         id: recordMenu
 
         Repeater {
-            model: root.recordModes
+            model: root.recordSoundOptions
 
             MenuItem {
+                id: soundItem
+
                 required property var modelData
 
-                icon: modelData.icon
-                text: modelData.title
-                selected: modelData.name === root.recordModeName
+                icon: soundItem.modelData.icon
+                text: soundItem.modelData.title
+                selected: soundItem.modelData.sound === CaptureService.recordAudio
                 onClicked: {
-                    root.recordModeName = modelData.name;
+                    CaptureService.setRecordAudio(soundItem.modelData.sound);
                     recordMenu.close();
                 }
             }

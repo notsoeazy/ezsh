@@ -57,7 +57,7 @@ Singleton {
 
         onExited: code => {
             if (code !== 0)
-                console.warn("ClipboardService: cliphist list failed", code);
+                console.warn("ClipboardService: cliphist list failed with code", code);
         }
     }
 }

@@ -1,8 +1,8 @@
 import QtQuick
 import QtQuick.Shapes
 
-import qs.themes
 import qs.config
+import qs.themes
 
 Shape {
     id: root

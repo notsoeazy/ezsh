@@ -9,6 +9,9 @@ import qs.components
 Item {
     id: root
 
+    property real centerY: root.height / 2
+    property real shownProgress: root.items.length > 0 ? 1 : 0
+
     readonly property int pageSize: 3
     readonly property int buttonSize: 36
     readonly property int buttonGap: Tokens.spacing.sm
@@ -16,9 +19,6 @@ Item {
     readonly property real chevronRestOpacity: 0.5
     readonly property var items: TrayService.items
     readonly property bool popupOpen: menu.shown
-
-    property real centerY: root.height / 2
-    property real shownProgress: root.items.length > 0 ? 1 : 0
 
     onEnabledChanged: {
         if (!root.enabled)

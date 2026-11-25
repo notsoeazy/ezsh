@@ -8,13 +8,13 @@ Item {
 
     property bool checked: false
 
-    readonly property int targetSize: 40
-    readonly property int ringSize: 20
-    readonly property int ringWidth: 2
-    readonly property int dotSize: 10
-
     // 0 = unchecked, 1 = checked; drives the dot's size.
     property real progress: root.checked ? 1 : 0
+
+    readonly property int targetSize: 40
+    readonly property int ringSize: 20
+    readonly property int ringWidth: Tokens.stroke.thick
+    readonly property int dotSize: 10
 
     implicitWidth: root.targetSize
     implicitHeight: root.targetSize

@@ -1,14 +1,17 @@
 pragma Singleton
-import Quickshell
+
 import QtQuick
+import Quickshell
 
 Singleton {
+    id: root
 
     readonly property Fonts font: Fonts {}
     readonly property FontSizes fontSize: FontSizes {}
     readonly property Icon icon: Icon {}
     readonly property Spacing spacing: Spacing {}
     readonly property Radius radius: Radius {}
+    readonly property Stroke stroke: Stroke {}
     readonly property AnimationDurations animDuration: AnimationDurations {}
     readonly property Opacity opacity: Opacity {}
     readonly property Bar bar: Bar {}
@@ -63,6 +66,12 @@ Singleton {
         readonly property int lg: 10
         readonly property int xl: 16
         readonly property int full: 9999
+    }
+
+    // Outline and focus-ring widths.
+    component Stroke: QtObject {
+        readonly property int thin: 1
+        readonly property int thick: 2
     }
 
     component AnimationDurations: QtObject {

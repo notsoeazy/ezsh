@@ -1,8 +1,11 @@
 import QtQuick
 
 import qs.services
+import qs.modules.launcher.widgets
 
 LauncherPage {
+    id: root
+
     placeholder: "Search emoji and symbols"
     icon: "emoji_symbols"
     emptyText: "Nothing found"
@@ -10,10 +13,12 @@ LauncherPage {
 
     row: Component {
         EntryRow {
-            title: modelData.title
-            subtitle: modelData.group
-            glyph: modelData.glyph
-            nerdGlyph: modelData.nerd
+            id: entryRow
+
+            title: entryRow.modelData.title
+            subtitle: entryRow.modelData.group
+            glyph: entryRow.modelData.glyph
+            nerdGlyph: entryRow.modelData.nerd
         }
     }
 

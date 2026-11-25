@@ -18,6 +18,7 @@ Scope {
     property int requestedRaw: -1
     property int queuedRaw: -1
 
+    readonly property int pollInterval: 500
     readonly property bool available: root.deviceName !== ""
     readonly property real level: (root.requestedRaw >= 0 ? root.requestedRaw : root.rawLevel) / root.maxRaw
 
@@ -54,7 +55,7 @@ Scope {
 
         onExited: code => {
             if (code !== 0)
-                console.warn("BacklightDevice: brightnessctl failed for", root.deviceName, code);
+                console.warn("BacklightDevice: brightnessctl failed for", root.deviceName, "with code", code);
             if (root.queuedRaw >= 0)
                 Qt.callLater(root.writeQueuedLevel);
             else
@@ -79,7 +80,7 @@ Scope {
     }
 
     Timer {
-        interval: 500
+        interval: root.pollInterval
         repeat: true
         running: root.available && root.pollForChanges
         onTriggered: sysfsReader.reload()

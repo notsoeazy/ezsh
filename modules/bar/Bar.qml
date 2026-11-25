@@ -15,10 +15,7 @@ Scope {
     id: root
 
     readonly property color backgroundColor: Theme.color.m3background
-
     readonly property int collapsedHeight: Tokens.bar.collapsedHeight
-
-
     readonly property int cornerRadius: Config.bar.cornerRadius
 
     Variants {
@@ -28,19 +25,15 @@ Scope {
             id: window
 
             required property var modelData
+
+            property real fullscreenProgress: window.fullscreen ? 1 : 0
+
             readonly property var monitor: HyprlandService.monitorFor(window.screen)
             readonly property bool fullscreen: HyprlandService.isFullscreenOn(window.monitor)
             readonly property real borderThickness: Config.border.thickness * (1 - window.fullscreenProgress)
             readonly property bool viewOpen: barHost.requestedView !== "bar"
 
-            property real fullscreenProgress: window.fullscreen ? 1 : 0
-
-            screen: modelData
-            
-            Behavior on fullscreenProgress {
-                Anim {}
-            }
-
+            screen: window.modelData
             anchors { top: true; bottom: true; left: true; right: true }
 
             color: "transparent"
@@ -49,6 +42,11 @@ Scope {
             WlrLayershell.layer: window.fullscreenProgress > 0 || HyprlandService.hasFullscreenUnderSpecial(window.monitor) ? WlrLayer.Overlay : WlrLayer.Top
             WlrLayershell.namespace: "quickshell-bar"
             WlrLayershell.keyboardFocus: window.viewOpen ? WlrKeyboardFocus.OnDemand : WlrKeyboardFocus.None
+            mask: barHost.popupOpen ? null : bodyRegion
+
+            Behavior on fullscreenProgress {
+                Anim {}
+            }
 
             HyprlandFocusGrab {
                 active: window.viewOpen
@@ -61,8 +59,6 @@ Scope {
                 window: window
                 enabled: KeepAwakeService.enabled
             }
-
-            mask: barHost.popupOpen ? null : bodyRegion
 
             Region {
                 id: bodyRegion
@@ -79,23 +75,33 @@ Scope {
             Item {
                 id: barBody
 
-                anchors.top: parent.top
-                x: (parent.width - width) / 2
-                anchors.topMargin: restingTopMargin - hideProgress * (restingTopMargin + height)
-
-                readonly property real restingTopMargin: window.borderThickness + (Config.bar.floating ? Config.bar.floatingGap : 0)
-                readonly property bool isFloating: Config.bar.floating
-                // A tray menu sits outside the body, so it keeps the bar open while the pointer is on it.
-                readonly property bool expanded: (barBody.hovered || barHost.popupOpen) && barHost.displayedView === "bar" && !window.fullscreen
-
                 property bool hovered: false
                 property bool hoverBlocked: false
 
                 property real hideProgress: window.fullscreen && !barHost.showsOsd && !window.viewOpen ? 1 : 0
-                property real progress: expanded ? 1 : 0
+                property real progress: barBody.expanded ? 1 : 0
                 property real previousWidth: 0
                 property real previousHeight: 0
                 property real resizeProgress: 1
+                property real cornerFlip: barBody.isFloating ? -1 : 1
+
+                readonly property bool isFloating: Config.bar.floating
+                readonly property real restingTopMargin: window.borderThickness + (barBody.isFloating ? Config.bar.floatingGap : 0)
+                // A tray menu sits outside the body, so it keeps the bar open while the pointer is on it.
+                readonly property bool expanded: (barBody.hovered || barHost.popupOpen) && barHost.displayedView === "bar" && !window.fullscreen
+                readonly property real bodyWidth: barBody.previousWidth + (barHost.displayedWidth - barBody.previousWidth) * barBody.resizeProgress
+                readonly property real bodyHeight: barBody.previousHeight + (barHost.displayedHeight - barBody.previousHeight) * barBody.resizeProgress
+                readonly property real radius: Math.min(barBody.isFloating ? root.collapsedHeight / 2 : root.cornerRadius, barBody.bodyWidth / 2)
+                readonly property real radiusY: Math.min(barBody.radius, barBody.bodyHeight / 2)
+                readonly property real shoulderRadiusX: Math.max(0.01, barBody.radius * Math.abs(barBody.cornerFlip))
+                readonly property real shoulderRadiusY: Math.max(0.01, barBody.radiusY * Math.abs(barBody.cornerFlip))
+                readonly property int cornerSweep: barBody.cornerFlip >= 0 ? PathArc.Clockwise : PathArc.Counterclockwise
+
+                anchors.top: parent.top
+                anchors.topMargin: barBody.restingTopMargin - barBody.hideProgress * (barBody.restingTopMargin + barBody.height)
+                x: (parent.width - barBody.width) / 2
+                width: barBody.bodyWidth + barBody.radius * 2
+                height: barBody.bodyHeight
 
                 Behavior on hideProgress {
                     Anim {}
@@ -105,19 +111,24 @@ Scope {
                     Anim {}
                 }
 
+                Behavior on cornerFlip {
+                    Anim {}
+                }
+
                 Connections {
                     target: barHost
 
                     function onViewChangeStarting(animate) {
-                        enterTimer.stop()
-                        exitTimer.stop()
-                        barBody.hovered = false
-                        barBody.hoverBlocked = hoverHandler.hovered
-                        resizeAnim.stop()
-                        barBody.previousWidth = barBody.bodyWidth
-                        barBody.previousHeight = barBody.bodyHeight
-                        barBody.resizeProgress = animate ? 0 : 1
-                        if (animate) resizeAnim.restart()
+                        enterTimer.stop();
+                        exitTimer.stop();
+                        barBody.hovered = false;
+                        barBody.hoverBlocked = hoverHandler.hovered;
+                        resizeAnim.stop();
+                        barBody.previousWidth = barBody.bodyWidth;
+                        barBody.previousHeight = barBody.bodyHeight;
+                        barBody.resizeProgress = animate ? 0 : 1;
+                        if (animate)
+                            resizeAnim.restart();
                     }
                 }
 
@@ -129,23 +140,6 @@ Scope {
                     from: 0
                     to: 1
                 }
-
-                readonly property real bodyWidth: previousWidth + (barHost.displayedWidth - previousWidth) * resizeProgress
-                readonly property real bodyHeight: previousHeight + (barHost.displayedHeight - previousHeight) * resizeProgress
-                readonly property real radius: Math.min(isFloating ? root.collapsedHeight / 2 : root.cornerRadius, bodyWidth / 2)
-                readonly property real radiusY: Math.min(radius, bodyHeight / 2)
-                readonly property real shoulderRadiusX: Math.max(0.01, radius * Math.abs(cornerFlip))
-                readonly property real shoulderRadiusY: Math.max(0.01, radiusY * Math.abs(cornerFlip))
-                readonly property int cornerSweep: cornerFlip >= 0 ? PathArc.Clockwise : PathArc.Counterclockwise
-
-                property real cornerFlip: isFloating ? -1 : 1
-
-                Behavior on cornerFlip {
-                    Anim {}
-                }
-
-                width: bodyWidth + radius * 2
-                height: bodyHeight
 
                 Shape {
                     anchors.fill: parent
@@ -211,14 +205,14 @@ Scope {
                     id: hoverHandler
 
                     onHoveredChanged: {
-                        if (hovered) {
-                            exitTimer.stop()
+                        if (hoverHandler.hovered) {
+                            exitTimer.stop();
                             if (!barBody.hoverBlocked)
-                                enterTimer.restart()
+                                enterTimer.restart();
                         } else {
-                            enterTimer.stop()
-                            barBody.hoverBlocked = false
-                            exitTimer.restart()
+                            enterTimer.stop();
+                            barBody.hoverBlocked = false;
+                            exitTimer.restart();
                         }
                     }
                 }
@@ -243,7 +237,6 @@ Scope {
                     x: barBody.radius
                     width: barBody.bodyWidth
                     height: barBody.bodyHeight
-
                     clip: true
 
                     BarHost {

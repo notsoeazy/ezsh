@@ -1,8 +1,10 @@
 import QtQuick
+
 import qs
-import qs.themes
 
 NumberAnimation {
+    id: root
+
     duration: Tokens.animDuration.spatial
     easing.type: Easing.OutCubic
 }

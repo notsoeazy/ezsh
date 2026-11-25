@@ -5,18 +5,18 @@ import Quickshell
 import Quickshell.Io
 
 import qs
+import qs.utils
 
 // Image sources for app icons that never decode a large raster in the shell stores in cache so that Qt does not produce warning for large icons.
 Singleton {
     id: root
 
-    readonly property int thumbnailSize: 64
-    readonly property int refreshDelayInterval: 2000
-
     property var thumbnails: ({})
     property bool ready: false
     property bool rerunQueued: false
 
+    readonly property int thumbnailSize: 64
+    readonly property int refreshDelayInterval: 2000
     readonly property var iconNames: DesktopEntries.applications.values.map(app => app.icon).filter(icon => icon)
 
     function source(name) {
@@ -24,7 +24,7 @@ Singleton {
             return "";
         const thumbnail = root.thumbnails[name];
         if (thumbnail)
-            return `file://${thumbnail}`;
+            return FilePaths.toFileUrl(thumbnail);
         if (thumbnail === null || root.ready && !(name in root.thumbnails))
             return Quickshell.iconPath(name, true);
         return "";
@@ -74,7 +74,7 @@ Singleton {
 
         onExited: code => {
             if (code !== 0) {
-                console.warn("IconService: icon-thumbs.py failed", code);
+                console.warn("IconService: icon-thumbs.py failed with code", code);
                 root.ready = true;
             }
             if (root.rerunQueued) {

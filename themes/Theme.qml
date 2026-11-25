@@ -1,8 +1,11 @@
 pragma Singleton
-import Quickshell
+
 import QtQuick
+import Quickshell
 
 Singleton {
+    id: root
+
     readonly property Colors color: Colors {}
 
     component Colors: QtObject {

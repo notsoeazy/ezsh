@@ -13,6 +13,7 @@ Controls.Popup {
     property bool shown: false
     // Open from the anchor's left edge instead of its right (for an anchor at the left of the bar).
     property bool leftAligned: false
+    property color containerColor: Theme.color.m3surfaceContainerHigh
 
     readonly property int minWidth: 160
     readonly property int maxWidth: 280
@@ -23,20 +24,6 @@ Controls.Popup {
         return width;
     }
 
-    function openBelow(anchor) {
-        root.parent = anchor;
-        root.x = root.leftAligned ? 0 : anchor.width - root.width;
-        root.y = anchor.height + Tokens.spacing.xxs;
-        root.open();
-    }
-
-    function toggle(anchor) {
-        if (root.shown)
-            root.close();
-        else
-            root.openBelow(anchor);
-    }
-
     width: Math.max(root.minWidth, Math.min(root.maxWidth, root.itemsWidth + root.padding * 2))
     padding: Tokens.spacing.xs
     modal: true
@@ -44,9 +31,6 @@ Controls.Popup {
     focus: true
     closePolicy: Controls.Popup.CloseOnEscape | Controls.Popup.CloseOnPressOutside
     transformOrigin: root.leftAligned ? Controls.Popup.TopLeft : Controls.Popup.TopRight
-
-    onAboutToShow: root.shown = true
-    onAboutToHide: root.shown = false
 
     enter: Transition {
         Anim {
@@ -78,10 +62,27 @@ Controls.Popup {
 
     background: StyledRectangle {
         radius: Tokens.radius.xl
-        color: Theme.color.m3surfaceContainerHigh
+        color: root.containerColor
     }
 
     contentItem: Column {
         id: column
     }
+
+    function openBelow(anchor) {
+        root.parent = anchor;
+        root.x = root.leftAligned ? 0 : anchor.width - root.width;
+        root.y = anchor.height + Tokens.spacing.xxs;
+        root.open();
+    }
+
+    function toggle(anchor) {
+        if (root.shown)
+            root.close();
+        else
+            root.openBelow(anchor);
+    }
+
+    onAboutToShow: root.shown = true
+    onAboutToHide: root.shown = false
 }
