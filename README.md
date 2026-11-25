@@ -2,6 +2,27 @@
 
 A Shell for my Arch + Hyprland setup.
 
+## Features
+
+- **Bar**: one notch that morphs between views, with workspaces, active window, clock and status icons; hover expands it to a second row and a dashboard (media player, notifications, system tray).
+- **Screen border**: a rounded frame around the screen, with exclusion zones so windows stay clear of it.
+- **OSD**: volume, brightness and mic levels, plus toggle messages (Do Not Disturb, night light, keep awake, ...).
+- **App launcher**: apps, `>` commands, clipboard history, and emoji + Nerd Font glyphs.
+- **Wallpaper selector**: live preview, applied with a reveal animation.
+- **Control panel**: Wi-Fi, Bluetooth, audio devices, brightness and volume, night light, keep awake, Do Not Disturb, power profiles and battery charge limit.
+- **Session menu**: lock, log out, restart, shut down.
+- **Screen capture**: region, window or whole screen, with an annotation editor (pen, shapes, arrows, text, highlight, blur).
+- **Screen recording**: region, window or screen, with optional audio, pause and resume.
+
+## Planned
+
+- [ ] Dynamic theming
+- [ ] Theme selector
+- [ ] Color picker
+- [ ] Configurations
+- [ ] Settings
+- [ ] Hyprland config
+
 ## Running
 
 ezsh lives in `~/.config/quickshell/ezsh`, so Quickshell finds it by name:
@@ -94,34 +115,22 @@ bind = SUPER, A, exec, qs -c ezsh ipc call view toggle controlpanel
 bind = SUPER, Escape, exec, qs -c ezsh ipc call view toggle session
 ```
 
-
-## Planned Features
-1. App Launcher
-2. Clipboard
-3. Emoji + Nerd Font glyphs
-4. Wallpaper Selector
-5. Screen Capture
-6. Screen Recording
-7. Dynamic Theming 
-8. Theme Selector
-9. Color Picker 
-10. Control Panel
-11. Configurations
-12. Settings
-13. Hyprland Config
-
 ## Tasks Completed
+
 November 22, 2026
 - [x] Border
 - [x] Exclusion Zone
 - [x] Bar Default/Expanded
 - [x] OSD Slider/Messages
 - [x] Services
+
 November 23, 2026
 - [x] App Launcher (apps, >commands, clipboard, symbols)
 - [x] Wallpaper Selector
+
 November 24, 2026
 - [x] Control Panel
 - [x] Expanded bar 2nd row - media player, compact notifications, and system tray
+
 November 25, 2026
 - [x] Screen capture (region/window/screen, annotation editor) and screen recording
